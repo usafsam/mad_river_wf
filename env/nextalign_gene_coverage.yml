@@ -1,0 +1,11 @@
+name: nextalign_gene_coverage
+channels:
+        - conda-forge
+        - defaults
+dependencies:
+        - r-argparser
+        - r-dplyr
+        - r-readr
+        - r-readxl
+        - r-tidyr
+        - r-writexl

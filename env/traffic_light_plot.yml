@@ -1,0 +1,12 @@
+name: traffic_light_plot
+channels:
+        - conda-forge
+        - defaults
+dependencies:
+        - r-argparser
+        - r-dplyr
+        - r-ggplot2
+        - r-ggnewscale
+        - r-readr
+        - r-stringr
+        - r-tidyr

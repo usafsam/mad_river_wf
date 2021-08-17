@@ -1,0 +1,6 @@
+name: performance_excel
+channels:
+        - conda-forge
+        - defaults
+dependencies:
+        - openpyxl
