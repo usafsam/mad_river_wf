@@ -68,7 +68,10 @@ def performance_excel_workbook(stats_json, coverage_summary, run_info, protocol)
     run_info_tree = ET.parse(run_info)
     run_info_root = run_info_tree.getroot()
     sequence_date_raw = run_info_root[0].find("Date").text
-    sequence_date = datetime.strptime(sequence_date_raw, "%y%m%d").strftime("%Y-%m-%d")
+    try:
+        sequence_date = datetime.strptime(sequence_date_raw, "%y%m%d").strftime("%Y-%m-%d")
+    except ValueError:
+        sequence_date = datetime.strptime(sequence_date_raw.split(" ")[0], "%m/%d/%Y").strftime("%Y-%m-%d")
     instrument_name = run_info_root[0].find("Instrument").text
 
     worksheet_header = ["Sample"] + coverage_reader.fieldnames[1:] + ["Barcode Sequences", "PF Clusters", "% of the lanes", "Yield (Mbases)", "% >= Q30 Bases", "Mean Quality Score", "Date of Sequence", "Instrument", "Protocol"]
@@ -107,7 +110,8 @@ def performance_excel_workbook(stats_json, coverage_summary, run_info, protocol)
 
 def lineage_excel_workbook(sample_sheet, pangolin_summary, nextclade_summary):
     sample_sheet_raw_lines = sample_sheet.read().splitlines()
-    sample_sheet_data_block = sample_sheet_raw_lines[sample_sheet_raw_lines.index("[Data]")+1:]
+    sample_sheet_data_block_index = [i for i, line in enumerate(sample_sheet_raw_lines) if line.startswith("[Data]")][0]
+    sample_sheet_data_block = sample_sheet_raw_lines[sample_sheet_data_block_index+1:]
     sample_sheet_data_dialect = csv.Sniffer().sniff(sample_sheet_data_block[0])
     sample_sheet_data = list(csv.reader(sample_sheet_data_block, dialect=sample_sheet_data_dialect))
     sample_ids = [row[1] for row in sample_sheet_data]
