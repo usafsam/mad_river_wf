@@ -19,7 +19,7 @@ params.nextclade_qc_config = workflow.projectDir + "/reference/qc.json"
 
 params.container_bbtools = 'staphb/bbtools:latest'
 params.container_ivar = 'staphb/ivar:latest'
-// params.container_nextclade = 'neherlab/nextclade:latest'
+params.container_nextclade = 'nextstrain/nextclade:latest'
 params.container_pangolin = 'staphb/pangolin:latest'
 params.container_samtools = 'staphb/samtools:latest'
 
@@ -860,7 +860,7 @@ process nextclade {
     tag "${sample}"
     echo false
     cpus params.medcpus
-    conda 'bioconda::nextclade'
+    container params.container_nextclade
 
     input:
     set val(sample), file(fasta), file(ref_fasta), file(tree), file(gff), file(qc) from nextclade_channel
