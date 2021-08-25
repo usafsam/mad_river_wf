@@ -39,6 +39,9 @@ println("The files and directory for the results is " + params.outdir)
 
 Channel
     .fromPath(params.reference_genome, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty{
         println("No reference genome was selected!")
         println("Did you forget to set 'params.reference_genome'?")
@@ -59,6 +62,9 @@ Channel
 
 Channel
     .fromPath(params.primer_fasta, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty{
         println("A FASTA file for primers is required!")
         println("Did you forget to set 'params.primer_bed'?")
@@ -69,6 +75,9 @@ Channel
 
 Channel
     .fromPath(params.adapter_fasta, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty{
         println("A FASTA.gz file for adapters is required!")
         println("Did you forget to set 'params.adapter_fasta'?")
@@ -80,6 +89,9 @@ Channel
 Channel
     .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq.gz", "${params.reads}/*_{1,2}.fastq*"], size: 2)
     .map{reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1])}
+    .filter{ reads ->
+        reads[1][0].exists() && reads[1][1].exists()
+    }
     .ifEmpty{
         println("No fastq or fastq.gz files were found at ${params.reads}!")
         println("Did you forget to set 'params.reads'?")
@@ -89,6 +101,9 @@ Channel
 
 Channel
     .fromPath(params.nextclade_tree, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty{
         println("Nextclade needs a tree.json file!")
         println("You can one from https://github.com/nextstrain/nextclade/tree/master/data/sars-cov-2.")
@@ -100,6 +115,9 @@ Channel
 
 Channel
     .fromPath(params.nextclade_qc_config, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty{
         println("Nextclade needs a qc.json file!")
         println("You can one from https://github.com/nextstrain/nextclade/tree/master/data/sars-cov-2.")
@@ -111,6 +129,9 @@ Channel
 
 Channel
     .fromPath(params.nextclade_gff_file, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty{
         println("Nextclade needs a separate GFF file!")
         println("You can one from https://github.com/nextstrain/nextclade/tree/master/data/sars-cov-2.")
@@ -122,6 +143,9 @@ Channel
 
 Channel
     .fromPath(params.stats_json, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty {
         println("The performance excel file needs data from a Stats.json file!")
         println("It should have been generated when you invoked bcl2fastq.")
@@ -133,6 +157,9 @@ Channel
 
 Channel
     .fromPath(params.run_info, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty {
         println("The performance excel file needs data from a RunInfo.xml file!")
         println("It should have been generated on the Illumina machine.")
@@ -144,6 +171,9 @@ Channel
 
 Channel
     .fromPath(params.sample_sheet, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
     .ifEmpty {
         println("The lineage excel file needs data from a SampleSheet.csv file!")
         println("It should have been generated for the Illumina machine.")
