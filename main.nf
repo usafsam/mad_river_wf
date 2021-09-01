@@ -526,9 +526,23 @@ process remove_junk_dels {
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools filtersam.sh: $(filtersam.sh -h | grep 'Last modified')" >> $log_file
 
-        trap 'if [[ $? == 124 ]]; then echo "Timed out." >> $log_file; if [[ $(stat -L -c "%s" !{task.process}/!{sample}_filtered.sam.gz) == 0 ]]; then rm -f !{task.process}/!{sample}_filtered.sam.gz; exit 0; fi; fi' EXIT
-        timeout 1m \
-            bash -c "filtersam.sh ref=!{ref_genome} ow in=!{samfile} out=!{task.process}/!{sample}_filtered.sam.gz mbad=2 del sub=f border=3 mbv=0 -Xms$MEMORY threads=!{task.cpus} 2>> $err_file >> $log_file"
+        if [[ $(stat -L -c "%s" !{samfile}) -lt 500 ]]; then
+            echo "!{samfile} has no information. Bailing out." >> $log_file;
+            exit 0;
+        fi
+        filtersam.sh \
+            ref=!{ref_genome} \
+            ow \
+            in=!{samfile} \
+            out=!{task.process}/!{sample}_filtered.sam.gz \
+            mbad=2 \
+            del \
+            sub=f \
+            border=3 \
+            mbv=0 \
+            -Xms$MEMORY \
+            threads=!{task.cpus} \
+            2>> $err_file >> $log_file
     ''' 
 }
 
@@ -574,9 +588,21 @@ process remove_singletons {
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools filtersam.sh: $(filtersam.sh -h | grep 'Last modified')" >> $log_file
 
-        trap 'if [[ $? == 124 ]]; then echo "Timed out." >> $log_file; if [[ $(stat -L -c "%s" !{task.process}/!{sample}_filtered2.sam.gz) == 0 ]]; then rm -f !{task.process}/!{sample}_filtered2.sam.gz; exit 0; fi; fi' EXIT
-        timeout 1m \
-            bash -c "filtersam.sh ref=!{ref_genome} ow in=!{samfile} out=!{task.process}/!{sample}_filtered2.sam.gz mbad=1 sub mbv=2 -Xms$MEMORY threads=!{task.cpus} 2>> $err_file >> $log_file"
+        if [[ $(stat -L -c "%s" !{samfile}) -lt 500 ]]; then
+            echo "!{samfile} has no information. Bailing out." >> $log_file;
+            exit 0;
+        fi
+        filtersam.sh \
+            ref=!{ref_genome} \
+            ow \
+            in=!{samfile} \
+            out=!{task.process}/!{sample}_filtered2.sam.gz \
+            mbad=1 \
+            sub \
+            mbv=2 \
+            -Xms$MEMORY \
+            threads=!{task.cpus} \
+            2>> $err_file >> $log_file
     ''' 
 }
 
