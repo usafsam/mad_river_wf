@@ -37,13 +37,21 @@ def performance_excel_workbook(stats_json, coverage_summary, run_info, protocol)
             read_metrics_yield = sum([x["Yield"] for x in sample_dict["ReadMetrics"]])
             read_metrics_yield_q30 = sum([x["YieldQ30"] for x in sample_dict["ReadMetrics"]])
             read_metrics_quality_score_sum = sum([x["QualityScoreSum"] for x in sample_dict["ReadMetrics"]])
+            try:
+                percent_geq_q30_bases = read_metrics_yield_q30 * 100 / read_metrics_yield
+            except ZeroDivisionError:
+                percent_geq_q30_bases = 0
+            try:
+                mean_quality_score = read_metrics_quality_score_sum / read_metrics_yield
+            except ZeroDivisionError:
+                mean_quality_score = 0
             if (sample_id := sample_dict["SampleId"]) in samples:
                 if sample_dict["SampleName"] == samples[sample_id].name and sample_dict["IndexMetrics"][0]["IndexSequence"] == samples[sample_id].barcode_sequence:
                     samples[sample_id].pf_clusters.append(sample_dict["NumberReads"])
                     samples[sample_id].percent_of_lanes.append(sample_dict["NumberReads"]*100/total_pf_clusters)
                     samples[sample_id].yield_in_mbases.append(sample_dict["Yield"]//1000000)
-                    samples[sample_id].percent_geq_q30_bases.append(read_metrics_yield_q30 * 100 / read_metrics_yield)
-                    samples[sample_id].mean_quality_score.append(read_metrics_quality_score_sum / read_metrics_yield)
+                    samples[sample_id].percent_geq_q30_bases.append(percent_geq_q30_bases)
+                    samples[sample_id].mean_quality_score.append(mean_quality_score)
                 else:
                     raise ValueError(f"mismatch with {sample_id}")
             else:
@@ -53,8 +61,8 @@ def performance_excel_workbook(stats_json, coverage_summary, run_info, protocol)
                         pf_clusters = [sample_dict["NumberReads"]],
                         percent_of_lanes = [sample_dict["NumberReads"]*100/total_pf_clusters],
                         yield_in_mbases = [sample_dict["Yield"]//1000000],
-                        percent_geq_q30_bases = [read_metrics_yield_q30 * 100 / read_metrics_yield],
-                        mean_quality_score = [read_metrics_quality_score_sum / read_metrics_yield]
+                        percent_geq_q30_bases = [percent_geq_q30_bases],
+                        mean_quality_score = [mean_quality_score]
                         )
 
     sample_names = sorted(list(samples))
