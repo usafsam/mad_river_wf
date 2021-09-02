@@ -9,13 +9,9 @@ params.run_info = workflow.launchDir + '/RunInfo.xml'
 params.sample_sheet = workflow.launchDir + '/SampleSheet.csv'
 params.stats_json = workflow.launchDir + '/Stats/Stats.json'
 
-params.reference_genome = workflow.projectDir + "/reference/virus.fasta"
 params.ivar_gff_file = workflow.projectDir + "/reference/ivar.gff"
 params.primer_fasta = workflow.projectDir + "/reference/primers.fasta"
 params.adapter_fasta = workflow.projectDir + "/reference/adapters.fa.gz"
-params.nextclade_gff_file = workflow.projectDir + "/reference/genemap.gff"
-params.nextclade_tree = workflow.projectDir + "/reference/tree.json"
-params.nextclade_qc_config = workflow.projectDir + "/reference/qc.json"
 
 params.container_bbtools = 'staphb/bbtools:latest'
 params.container_ivar = 'staphb/ivar:latest'
@@ -38,19 +34,6 @@ if (params.maxcpus < 5) {
 println("The files and directory for the results is " + params.outdir)
 
 Channel
-    .fromPath(params.reference_genome, type:'file')
-    .filter{ fh ->
-        fh.exists()
-    }
-    .ifEmpty{
-        println("No reference genome was selected!")
-        println("Did you forget to set 'params.reference_genome'?")
-        exit 1
-    }
-    .view {"Reference Genome : $it"}
-    .into { reference_genome_take_viral; reference_genome_bbmap_align; reference_genome_remove_junk_dels; reference_genome_remove_singletons; reference_genome_ivar_variants; reference_genome_nextclade }
-
-Channel
     .fromPath(params.ivar_gff_file, type:'file')
     .ifEmpty{
         println("No GFF file was selected!")
@@ -67,7 +50,7 @@ Channel
     }
     .ifEmpty{
         println("A FASTA file for primers is required!")
-        println("Did you forget to set 'params.primer_bed'?")
+        println("Did you forget to set 'params.primer_fasta'?")
         exit 1
     }
     .view { "Primer FASTA : $it" }
@@ -99,47 +82,6 @@ Channel
     }
     .set {paired_reads}
 
-Channel
-    .fromPath(params.nextclade_tree, type:'file')
-    .filter{ fh ->
-        fh.exists()
-    }
-    .ifEmpty{
-        println("Nextclade needs a tree.json file!")
-        println("You can one from https://github.com/nextstrain/nextclade/tree/master/data/sars-cov-2.")
-        println("Did you forget to set 'params.nextclade_tree'?")
-        exit 1
-    }
-    .view { "Nextclade tree.json: $it" }
-    .set {nextclade_tree}
-
-Channel
-    .fromPath(params.nextclade_qc_config, type:'file')
-    .filter{ fh ->
-        fh.exists()
-    }
-    .ifEmpty{
-        println("Nextclade needs a qc.json file!")
-        println("You can one from https://github.com/nextstrain/nextclade/tree/master/data/sars-cov-2.")
-        println("Did you forget to set 'params.nextclade_qc_config'?")
-        exit 1
-    }
-    .view {"Nextclade qc.json: $it"}
-    .set {nextclade_qc}
-
-Channel
-    .fromPath(params.nextclade_gff_file, type:'file')
-    .filter{ fh ->
-        fh.exists()
-    }
-    .ifEmpty{
-        println("Nextclade needs a separate GFF file!")
-        println("You can one from https://github.com/nextstrain/nextclade/tree/master/data/sars-cov-2.")
-        println("Did you forget to set 'params.nextclade_gff_file'?")
-        exit 1
-    }
-    .view {"Nextclade GFF file: $it"}
-    .set {gff_file_nextclade}
 
 Channel
     .fromPath(params.stats_json, type:'file')
@@ -184,6 +126,37 @@ Channel
     .set {sample_sheet_csv}
 
 println("")
+
+process grab_nextclade_data {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
+    echo false
+    cpus params.medcpus
+    container params.container_nextclade
+
+    output:
+    file("data/sars-cov-2_MN908947/reference.fasta") into reference_genome
+    file("data/sars-cov-2_MN908947/") into reference_nextclade
+    
+    shell:
+    '''
+        mkdir -p logs/
+        log_file=logs/!{task.process}.log
+        err_file=logs/!{task.process}.err
+        
+        # time stamp + capturing tool versions
+        date | tee -a $log_file $err_file > /dev/null
+        nextclade --version >> $log_file
+        
+        nextclade dataset get \
+            --name='sars-cov-2' \
+            --reference='MN908947' \
+            --output-dir='data/sars-cov-2_MN908947'
+    '''
+}
+
+reference_genome
+    .into { reference_genome_take_viral; reference_genome_bbmap_align; reference_genome_remove_junk_dels; reference_genome_remove_singletons; reference_genome_ivar_variants }
+
 
 process interleave {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
@@ -903,10 +876,7 @@ pangolin_files
     .set { combined_pangolin_report_performance_lineage_excel }
 
 consensus_nextclade
-    .combine(reference_genome_nextclade)
-    .combine(nextclade_tree)
-    .combine(gff_file_nextclade)
-    .combine(nextclade_qc)
+    .combine(reference_nextclade)
     .set { nextclade_channel }
 
 params.nextclade_options = ''
@@ -919,7 +889,7 @@ process nextclade {
     container params.container_nextclade
 
     input:
-    set val(sample), file(fasta), file(ref_fasta), file(tree), file(gff), file(qc) from nextclade_channel
+    set val(sample), file(fasta), file(ref_nextclade) from nextclade_channel
 
     output:
     file("${task.process}/${sample}_nextclade.csv") into nextclade_files
@@ -935,19 +905,16 @@ process nextclade {
         date | tee -a $log_file $err_file > /dev/null
         nextclade --version >> $log_file
         
-        nextclade \
-            !{params.nextclade_options} \
+        nextclade run \
             --jobs !{task.cpus} \
             -i !{fasta} \
-            --input-root-seq !{ref_fasta} \
-            --input-gene-map !{gff} \
-            --input-tree !{tree} \
-            --input-qc-config !{qc} \
+            --input-dataset !{ref_nextclade} \
             --output-dir !{task.process}/ \
             --output-basename !{sample}_nextclade \
             --output-csv !{task.process}/!{sample}_nextclade.csv \
             --output-json !{task.process}/!{sample}_nextclade.json \
             --output-tree !{task.process}/!{sample}_nextclade.auspice.json \
+            !{params.nextclade_options} \
             2>> $err_file >> $log_file
     '''
 }
