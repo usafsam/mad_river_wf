@@ -1035,10 +1035,15 @@ process performance_lineage_excel {
         python3 --version >> $log_file
 
         performance_lineage_excel.py $(basename !{params.outdir}) \
+            performance \
             --stats_json !{stats_json} \
             --coverage_summary !{coverage_summary} \
             --run_info !{run_info} \
             --protocol !{params.protocol} \
+            2>> $err_file >> $log_file
+
+        performance_lineage_excel.py $(basename !{params.outdir}) \
+            lineage \
             --sample_sheet !{sample_sheet} \
             --pangolin_summary !{pangolin_csv} \
             --nextclade_summary !{nextclade_csv} \

@@ -174,20 +174,23 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = "Make some excel files related to performance and lineage.")
     parser.add_argument("prefix", type=str, help="Prefix for output excel files.")
-    parser.add_argument("--lineage_only", action="store_true", help="output only the lineage file")
-    parser.add_argument("--sample_sheet", type=argparse.FileType("r"), required=True, help="Sample sheet fed into the Illumina machine")
-    parser.add_argument("--pangolin_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Pangolin lineages")
-    parser.add_argument("--nextclade_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Nextclade lineages")
 
-    args, rem_args = parser.parse_known_args()
-    if not args.lineage_only:
-        parser.add_argument("--stats_json", type=argparse.FileType("r"), required=True, help="Stats.json produced by bcl2fastq")
-        parser.add_argument("--coverage_summary", type=argparse.FileType("r"), required=True, help="TXT file produced by summarizecoverage.sh")
-        parser.add_argument("--run_info", type=argparse.FileType("r"), required=True, help="RunInfo.xml produced by the Illumina machine")
-        parser.add_argument("--protocol", type=str, required=True, help="This run's protocol")
+    subparsers = parser.add_subparsers(help="Performance or lineage", dest="which")
 
-        parser.parse_args(rem_args, namespace=args)
+    performance_parser = subparsers.add_parser("performance", help="Generate performance excel")
+    performance_parser.add_argument("--stats_json", type=argparse.FileType("r"), required=True, help="Stats.json produced by bcl2fastq")
+    performance_parser.add_argument("--coverage_summary", type=argparse.FileType("r"), required=True, help="TXT file produced by summarizecoverage.sh")
+    performance_parser.add_argument("--run_info", type=argparse.FileType("r"), required=True, help="RunInfo.xml produced by the Illumina machine")
+    performance_parser.add_argument("--protocol", type=str, required=True, help="This run's protocol")
 
+    lineage_parser = subparsers.add_parser("lineage", help="Generate lineage excel")
+    lineage_parser.add_argument("--sample_sheet", type=argparse.FileType("r"), required=True, help="Sample sheet fed into the Illumina machine")
+    lineage_parser.add_argument("--pangolin_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Pangolin lineages")
+    lineage_parser.add_argument("--nextclade_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Nextclade lineages")
+
+    args = parser.parse_args()
+
+    if args.which == "performance":
         performance_excel_workbook(args.stats_json, args.coverage_summary, args.run_info, args.protocol).save(f"{args.prefix}_performance.xlsx")
-
-    lineage_excel_workbook(args.sample_sheet, args.pangolin_summary, args.nextclade_summary).save(f"{args.prefix}_lineage.xlsx")
+    if args.which == "lineage":
+        lineage_excel_workbook(args.sample_sheet, args.pangolin_summary, args.nextclade_summary).save(f"{args.prefix}_lineage.xlsx")
