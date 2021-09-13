@@ -514,7 +514,7 @@ process remove_junk_dels {
         echo "BBTools filtersam.sh: $(filtersam.sh -h | grep 'Last modified')" >> $log_file
 
         if [[ $(stat -L -c "%s" !{samfile}) -lt 500 ]]; then
-            echo "!{samfile} has no information. Bailing out." >> $log_file;
+            echo "!{samfile} has a size of $(stat -L -c "%s" !{samfile}) bytes, which is less than the allowable threshold. Bailing out." >> $log_file;
             exit 0;
         fi
         filtersam.sh \
@@ -576,7 +576,7 @@ process remove_singletons {
         echo "BBTools filtersam.sh: $(filtersam.sh -h | grep 'Last modified')" >> $log_file
 
         if [[ $(stat -L -c "%s" !{samfile}) -lt 500 ]]; then
-            echo "!{samfile} has no information. Bailing out." >> $log_file;
+            echo "!{samfile} has a size of $(stat -L -c "%s" !{samfile}) bytes, which is less than the allowable threshold. Bailing out." >> $log_file;
             exit 0;
         fi
         filtersam.sh \
