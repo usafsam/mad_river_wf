@@ -12,6 +12,7 @@ params.stats_json = workflow.launchDir + '/Stats/Stats.json'
 params.ivar_gff_file = workflow.projectDir + "/reference/ivar.gff"
 params.primer_fasta = workflow.projectDir + "/reference/primers.fasta"
 params.adapter_fasta = workflow.projectDir + "/reference/adapters.fa.gz"
+params.nextclade_primers = workflow.projectDir + "/reference/midnight_primers_nextclade.csv"
 
 params.container_bbtools = 'staphb/bbtools:latest'
 params.container_ivar = 'staphb/ivar:latest'
@@ -68,6 +69,19 @@ Channel
     }
     .view { "Adapter FASTA.gz : $it"}
     .set { adapter_fasta }
+
+Channel
+    .fromPath(params.nextclade_primers, type:'file')
+    .filter{ fh ->
+        fh.exists()
+    }
+    .ifEmpty{
+        println("Nextclade requires a CSV file for primers!")
+        println("Did you forget to set 'params.nextclade_primers'?")
+        exit 1
+    }
+    .view { "Nextclade primers CSV: $it"}
+    .set { nextclade_primers }
 
 Channel
     .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq.gz", "${params.reads}/*_{1,2}.fastq*"], size: 2)
@@ -877,6 +891,7 @@ pangolin_files
 
 consensus_nextclade
     .combine(reference_nextclade)
+    .combine(nextclade_primers)
     .set { nextclade_channel }
 
 params.nextclade_options = ''
@@ -889,7 +904,7 @@ process nextclade {
     container params.container_nextclade
 
     input:
-    set val(sample), file(fasta), file(ref_nextclade) from nextclade_channel
+    set val(sample), file(fasta), file(ref_nextclade), file(primers_csv) from nextclade_channel
 
     output:
     file("${task.process}/${sample}_nextclade.csv") into nextclade_files
@@ -909,6 +924,7 @@ process nextclade {
             --jobs !{task.cpus} \
             -i !{fasta} \
             --input-dataset !{ref_nextclade} \
+            --input-pcr-primers !{primers_csv} \
             --output-dir !{task.process}/ \
             --output-basename !{sample}_nextclade \
             --output-csv !{task.process}/!{sample}_nextclade.csv \
