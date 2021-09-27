@@ -122,7 +122,8 @@ def lineage_excel_workbook(sample_sheet, pangolin_summary, nextclade_summary):
     sample_sheet_data_block = sample_sheet_raw_lines[sample_sheet_data_block_index+1:]
     sample_sheet_data_dialect = csv.Sniffer().sniff(sample_sheet_data_block[0])
     sample_sheet_data = list(csv.reader(sample_sheet_data_block, dialect=sample_sheet_data_dialect))
-    sample_ids = [row[1] for row in sample_sheet_data]
+    sample_id_index = sample_sheet_data[0].index("Sample_ID")
+    sample_ids = [row[sample_id_index].strip().lower() for row in sample_sheet_data]
     
     wb = Workbook()
     ws_pangolin = wb.active
@@ -136,7 +137,7 @@ def lineage_excel_workbook(sample_sheet, pangolin_summary, nextclade_summary):
             continue
         # print(f"lol @ {row[0]}")
         try:
-            sample_name = [s for s in sample_ids if s in row[0]][0]
+            sample_name = [s for s in sample_ids if s in row[0].lower()][0]
         except IndexError as e:
             # print(sample_ids)
             if "undetermined" in row[0].lower():
@@ -156,7 +157,7 @@ def lineage_excel_workbook(sample_sheet, pangolin_summary, nextclade_summary):
             continue
         # print(f"lol @ {row[0]}")
         try:
-            sample_name = [s for s in sample_ids if s in row[0]][0]
+            sample_name = [s for s in sample_ids if s in row[0].lower()][0]
         except IndexError as e:
             # print(sample_ids)
             if "undetermined" in row[0].lower():
