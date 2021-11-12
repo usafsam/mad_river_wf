@@ -2,8 +2,8 @@
 
 Named after the Mad River, one of the major rivers that runs through Dayton, Ohio.
 
-Mad River is a workflow developed by Padraic Fanning at USAFSAM/PHT, based on the [Cecret workflow by Erin Young](https://github.com/UPHL-BioNGS/Cecret) and work by Dr. Tony Fries.
-This workflow is initially designed for SARS-COV-2 sequencing with the Illumina hybrid library prep workflow using [version 1 of the "midnight" primer set by Freed and Silander](https://www.protocols.io/view/sars-cov2-genome-sequencing-protocol-1200bp-amplic-btsrnnd6).
+Mad River is a workflow developed by Padraic Fanning at United States Air Force School of Aerospace Medicine (USAFSAM) Applied Technologies & Genomics Division, based on the [Cecret workflow by Erin Young](https://github.com/UPHL-BioNGS/Cecret) and work by Dr. Anthony Fries.
+This workflow is initially designed for SARS-COV-2 sequencing with the Illumina Nextera XT library prep workflow using [version 1 of the "midnight" primer set by Freed and Silander](https://www.protocols.io/view/sars-cov2-genome-sequencing-protocol-1200bp-amplic-btsrnnd6).
 Currently, this workflow (in its current state) has been tested on data generated from NextSeq runs and includes potentially helpful diagnostics such as spike gene coverage and variant coverage/quality metrics.
 The tools used are mostly sourced from [the Docker images provided by StaPH-B](https://github.com/StaPH-B/docker-builds), which include:
 
