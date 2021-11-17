@@ -150,17 +150,17 @@ process grab_nextclade_data {
     output:
     file("data/sars-cov-2_MN908947/reference.fasta") into reference_genome
     file("data/sars-cov-2_MN908947/") into reference_nextclade
-    
+
     shell:
     '''
         mkdir -p logs/
         log_file=logs/!{task.process}.log
         err_file=logs/!{task.process}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         nextclade --version >> $log_file
-        
+
         nextclade dataset get \
             --name='sars-cov-2' \
             --reference='MN908947' \
@@ -179,10 +179,10 @@ process interleave {
     cpus params.medcpus
     container params.container_bbtools
     memory 300.MB
-    
+
     input:
     set val(sample), file(reads) from paired_reads
-    
+
     output:
     tuple sample, file("${task.process}/${sample}_interleaved.fq.gz") optional true into interleaved_specimens
     file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
@@ -192,7 +192,7 @@ process interleave {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools reformat.sh: $(reformat.sh -h | grep 'Last modified')" >> $log_file
@@ -227,7 +227,7 @@ process bbmerge {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbmerge.sh: $(bbmerge.sh -h | grep 'Last modified')" >> $log_file
@@ -277,7 +277,7 @@ process take_viral {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbduk.sh: $(bbduk.sh -h | grep 'Last modified')" >> $log_file
@@ -291,7 +291,7 @@ process take_viral {
             outm=!{task.process}/!{sample}_viral.fq.gz \
             k=25 \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 viral_specimens
@@ -329,7 +329,7 @@ process trim_adapters {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbduk.sh: $(bbduk.sh -h | grep 'Last modified')" >> $log_file
@@ -355,7 +355,7 @@ process trim_adapters {
             ftm=5 \
             ow \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 adapter_trimmed_specimens
@@ -393,7 +393,7 @@ process trim_primers {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbduk.sh: $(bbduk.sh -h | grep 'Last modified')" >> $log_file
@@ -411,7 +411,7 @@ process trim_primers {
             -Xms$MEMORY \
             threads=!{task.cpus} \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 primer_trimmed_specimens
@@ -451,7 +451,7 @@ process bbmap_align {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbmap.sh: $(bbmap.sh -h | grep 'Last modified')" >> $log_file
@@ -468,7 +468,7 @@ process bbmap_align {
             ow \
             k=12 \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 aligned_sams
@@ -508,7 +508,7 @@ process remove_junk_dels {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools filtersam.sh: $(filtersam.sh -h | grep 'Last modified')" >> $log_file
@@ -530,7 +530,7 @@ process remove_junk_dels {
             -Xms$MEMORY \
             threads=!{task.cpus} \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 filtered_junk_sams
@@ -570,7 +570,7 @@ process remove_singletons {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools filtersam.sh: $(filtersam.sh -h | grep 'Last modified')" >> $log_file
@@ -590,7 +590,7 @@ process remove_singletons {
             -Xms$MEMORY \
             threads=!{task.cpus} \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 process soft_trim {
@@ -624,7 +624,7 @@ process soft_trim {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbduk.sh: $(bbduk.sh -h | grep 'Last modified')" >> $log_file
@@ -636,7 +636,7 @@ process soft_trim {
             threads=!{task.cpus} \
             ow \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 soft_trimmed_sams
@@ -678,7 +678,7 @@ process pileup {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools pileup.sh: $(pileup.sh -h | grep 'Last modified')" >> $log_file
@@ -693,8 +693,39 @@ process pileup {
             -Xms$MEMORY \
             threads=!{task.cpus} \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
+
+process summarize_coverage {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "coverageSummary.txt"
+    echo false
+    cpus params.medcpus
+    container params.container_bbtools
+
+    input:
+    file(basecov_files) from basecov.toSortedList()
+
+    output:
+    file("coverageSummary.txt") into coverageSummary
+    file("logs/${task.process}.{log,err}")
+
+    shell:
+    '''
+        mkdir -p !{task.process} logs/
+        log_file=logs/!{task.process}.log
+        err_file=logs/!{task.process}.err
+
+        # time stamp + capturing tool versions
+        date | tee -a $log_file $err_file > /dev/null
+        echo "BBTools summarizecoverage.sh: $(summarizecoverage.sh -h | grep 'Last modified')" >> $log_file
+
+        summarizecoverage.sh !{basecov_files} out=coverageSummary.txt 2>> $err_file >> $log_file
+    '''
+}
+
+coverageSummary
+    .into {coverageSummary_traffic_light_plot; coverageSummary_performance_lineage_excel}
 
 process samtools_sort_index {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
@@ -718,7 +749,7 @@ process samtools_sort_index {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         samtools --version >> $log_file
@@ -732,7 +763,7 @@ process samtools_sort_index {
             !{task.process}/!{sample}_trimclip.sorted.bam.gz \
             !{task.process}/!{sample}_trimclip.sorted.bam.gz.bai \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 bamfile
@@ -761,7 +792,7 @@ process ivar_consensus {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         samtools --version >> $log_file
@@ -772,7 +803,7 @@ process ivar_consensus {
             -t 0.6 \
             -m !{params.mincov} \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
 consensus_collect
@@ -795,7 +826,7 @@ process ivar_variants {
 
     input:
     set val(sample), file(bamfile), file(ref_genome), file(ref_gff) from ivar_variants_channel
-    
+
     output:
     file("${task.process}/${sample}.variants.tsv") into ivar_tsvs
     file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
@@ -805,7 +836,7 @@ process ivar_variants {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         samtools --version >> $log_file
@@ -817,39 +848,41 @@ process ivar_variants {
             -g !{ref_gff} \
             -p !{task.process}/!{sample}.variants \
             2>> $err_file >> $log_file
-    ''' 
+    '''
 }
 
-process summarize_coverage {
+params.traffic_light_plot_file_out = "pdf"
+process traffic_light_plot {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
-    publishDir "${params.outdir}", mode: 'copy', pattern: "coverageSummary.txt"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "*.summary.${params.traffic_light_plot_file_out}"
     echo false
-    cpus params.medcpus
-    container params.container_bbtools
+    conda "${workflow.projectDir}/env/traffic_light_plot.yml"
 
     input:
-    file(basecov_files) from basecov.toSortedList()
+    file(ivar_tsv) from ivar_tsvs.toSortedList()
+    file(coverage_summary) from coverageSummary_traffic_light_plot
 
     output:
-    file("coverageSummary.txt") into coverageSummary
+    file("${file(params.outdir).getSimpleName()}.summary.${params.traffic_light_plot_file_out}")
     file("logs/${task.process}.{log,err}")
-    
+
     shell:
     '''
         mkdir -p !{task.process} logs/
         log_file=logs/!{task.process}.log
         err_file=logs/!{task.process}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
-        echo "BBTools summarizecoverage.sh: $(summarizecoverage.sh -h | grep 'Last modified')" >> $log_file
+        Rscript --version 2>> $log_file
 
-        summarizecoverage.sh !{basecov_files} out=coverageSummary.txt 2>> $err_file >> $log_file
+        traffic_light_plot.R $(basename !{params.outdir}) \
+            --ivar_tsv !{ivar_tsv} \
+            --cov !{coverage_summary} \
+            --out_type !{params.traffic_light_plot_file_out} \
+            2>> $err_file >> $log_file
     '''
 }
-
-coverageSummary
-    .into {coverageSummary_traffic_light_plot; coverageSummary_performance_lineage_excel}
 
 params.pangolin_options = ''
 process pangolin {
@@ -872,12 +905,12 @@ process pangolin {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         pangolin --version >> $log_file
         pangolin --pangoLEARN-version >> $log_file
-        
+
         pangolin !{params.pangolin_options} \
             --outdir !{task.process}/!{sample} \
             !{fasta} \
@@ -915,11 +948,11 @@ process nextclade {
         mkdir -p !{task.process} logs/!{task.process}
         log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
         err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         nextclade --version >> $log_file
-        
+
         nextclade run \
             --jobs !{task.cpus} \
             -i !{fasta} \
@@ -959,7 +992,7 @@ process spike_gene_coverage {
         mkdir -p !{task.process} logs/
         log_file=logs/!{task.process}.log
         err_file=logs/!{task.process}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         Rscript --version 2>> $log_file
@@ -969,39 +1002,6 @@ process spike_gene_coverage {
             21563 25384 \
             --sample_id !{params.spike_gene_coverage_sample_column} \
             --out_type !{params.spike_gene_coverage_file_out} \
-            2>> $err_file >> $log_file
-    '''
-}
-
-params.traffic_light_plot_file_out = "pdf"
-process traffic_light_plot {
-    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
-    publishDir "${params.outdir}", mode: 'copy', pattern: "*.summary.${params.traffic_light_plot_file_out}"
-    echo false
-    conda "${workflow.projectDir}/env/traffic_light_plot.yml"
-
-    input:
-    file(ivar_tsv) from ivar_tsvs.toSortedList()
-    file(coverage_summary) from coverageSummary_traffic_light_plot
-
-    output:
-    file("${file(params.outdir).getSimpleName()}.summary.${params.traffic_light_plot_file_out}")
-    file("logs/${task.process}.{log,err}")
-
-    shell:
-    '''
-        mkdir -p !{task.process} logs/
-        log_file=logs/!{task.process}.log
-        err_file=logs/!{task.process}.err
-        
-        # time stamp + capturing tool versions
-        date | tee -a $log_file $err_file > /dev/null
-        Rscript --version 2>> $log_file
-
-        traffic_light_plot.R $(basename !{params.outdir}) \
-            --ivar_tsv !{ivar_tsv} \
-            --cov !{coverage_summary} \
-            --out_type !{params.traffic_light_plot_file_out} \
             2>> $err_file >> $log_file
     '''
 }
@@ -1029,7 +1029,7 @@ process performance_lineage_excel {
         mkdir -p !{task.process} logs/
         log_file=logs/!{task.process}.log
         err_file=logs/!{task.process}.err
-        
+
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
         python3 --version >> $log_file
