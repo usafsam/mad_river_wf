@@ -9,11 +9,12 @@ params.run_info = workflow.launchDir + '/RunInfo.xml'
 params.sample_sheet = workflow.launchDir + '/SampleSheet.csv'
 params.stats_json = workflow.launchDir + '/Stats/Stats.json'
 
-params.ivar_gff_file = workflow.projectDir + "/reference/ivar.gff"
+params.ivar_gff_gzip_file = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/858/895/GCA_009858895.3_ASM985889v3/GCA_009858895.3_ASM985889v3_genomic.gff.gz"
 params.primer_fasta = workflow.projectDir + "/reference/primers.fasta"
 params.adapter_fasta = workflow.projectDir + "/reference/adapters.fa.gz"
 params.nextclade_primers = workflow.projectDir + "/reference/midnight_primers_nextclade.csv"
 
+params.container_biocontainers = 'biocontainers/biocontainers:v1.2.0_cv1'
 params.container_bbtools = 'staphb/bbtools:latest'
 params.container_ivar = 'staphb/ivar:latest'
 params.container_nextclade = 'nextstrain/nextclade:latest'
@@ -35,14 +36,14 @@ if (params.maxcpus < 5) {
 println("The files and directory for the results is " + params.outdir)
 
 Channel
-    .fromPath(params.ivar_gff_file, type:'file')
+    .fromPath(params.ivar_gff_gzip_file, type:'file')
     .ifEmpty{
         println("No GFF file was selected!")
-        println("Did you forget to set 'params.ivar_gff_file'?")
+        println("Did you forget to set 'params.ivar_gff_gzip_file'?")
         exit 1
     }
     .view { "iVar GFF file for Reference Genome : $it" }
-    .set {gff_file_ivar}
+    .set {ivar_gff_gzip_file_checked}
 
 Channel
     .fromPath(params.primer_fasta, type:'file')
@@ -144,7 +145,6 @@ println("")
 process grab_nextclade_data {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     echo false
-    cpus params.medcpus
     container params.container_nextclade
 
     output:
@@ -171,6 +171,31 @@ process grab_nextclade_data {
 reference_genome
     .into { reference_genome_take_viral; reference_genome_bbmap_align; reference_genome_remove_junk_dels; reference_genome_remove_singletons; reference_genome_ivar_variants }
 
+process grab_ivar_gff {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
+    echo false
+    container params.container_biocontainers
+
+    input:
+    file(gff_file_gzip) from ivar_gff_gzip_file_checked
+
+    output:
+    file("*.gff") into gff_file_ivar
+
+    shell:
+    '''
+        mkdir -p logs/
+        log_file=logs/!{task.process}.log
+        err_file=logs/!{task.process}.err
+
+        # time stamp + capturing tool versions
+        date | tee -a $log_file $err_file > /dev/null
+        echo $(gunzip --version 2>&1) | sed 's/^.*(gzip) //; s/ Copyright.*$//' >> $log_file
+
+        gunzip -f !{gff_file_gzip} \
+            2>> $err_file >> $log_file
+    '''
+}
 
 process interleave {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
