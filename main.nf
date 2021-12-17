@@ -86,7 +86,7 @@ Channel
 
 Channel
     .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq.gz", "${params.reads}/*_{1,2}.fastq*"], size: 2)
-    .map{reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1])}
+    .map{reads -> tuple(reads[0].replaceAll(~/_S[0-9]+(_L[0-9]+)?/,""), reads[1])}
     .filter{ reads ->
         reads[1][0].exists() && reads[1][1].exists()
     }
