@@ -935,9 +935,11 @@ process pangolin {
         date | tee -a $log_file $err_file > /dev/null
         pangolin --version >> $log_file
         pangolin --pangoLEARN-version >> $log_file
+        pangolin --pango-designation-version >> $log_file
 
         pangolin !{params.pangolin_options} \
             --outdir !{task.process}/!{sample} \
+            --threads !{task.cpus} \
             !{fasta} \
             2>> $err_file >> $log_file
     '''
