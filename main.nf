@@ -2,11 +2,15 @@
 
 nextflow.enable.dsl=2
 
+params.skip_performance_lineage_excel = false
+
 params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/results'
-// params.run_info = workflow.launchDir + '/RunInfo.xml'
-// params.sample_sheet = workflow.launchDir + '/SampleSheet.csv'
-// params.stats_json = workflow.launchDir + '/Stats/Stats.json'
+if (!params.skip_performance_lineage_excel) {
+    params.run_info = workflow.launchDir + '/RunInfo.xml'
+    params.sample_sheet = workflow.launchDir + '/SampleSheet.csv'
+    params.stats_json = workflow.launchDir + '/Stats/Stats.json'
+}
 
 params.ivar_gff_gzip_file = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/858/895/GCA_009858895.3_ASM985889v3/GCA_009858895.3_ASM985889v3_genomic.gff.gz"
 params.primer_fasta = workflow.projectDir + "/reference/primers.fasta"
@@ -21,7 +25,9 @@ params.container_pangolin = 'staphb/pangolin:latest'
 params.container_samtools = 'staphb/samtools:latest'
 
 params.mincov = 15
-params.protocol = '1200Midnight_XT'
+if (!params.skip_performance_lineage_excel) {
+    params.protocol = '1200Midnight_XT'
+}
 
 params.maxcpus = Runtime.runtime.availableProcessors()
 println("The maximum number of CPUs used in this workflow is ${params.maxcpus}")
@@ -869,50 +875,50 @@ process SPIKE_GENE_COVERAGE {
     '''
 }
 
-// process PERFORMANCE_LINEAGE_EXCEL {
-//     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
-//     publishDir "${params.outdir}", mode: 'copy', pattern: "*_{lineage,performance}.xlsx"
-//     echo false
-//     conda "${workflow.projectDir}/env/performance_lineage_excel.yml"
+process PERFORMANCE_LINEAGE_EXCEL {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "*_{lineage,performance}.xlsx"
+    echo false
+    conda "${workflow.projectDir}/env/performance_lineage_excel.yml"
 
-//     input:
-//         file(stats_json)
-//         file(coverage_summary)
-//         file(pangolin_csv)
-//         file(nextclade_csv)
-//         file(run_info)
-//         file(sample_sheet)
+    input:
+        file(stats_json)
+        file(coverage_summary)
+        file(pangolin_csv)
+        file(nextclade_csv)
+        file(run_info)
+        file(sample_sheet)
 
-//     output:
-//         path("${file(params.outdir).getSimpleName()}_{lineage,performance}.xlsx")
-//         path("logs/${task.process}.{log,err}")
+    output:
+        path("${file(params.outdir).getSimpleName()}_{lineage,performance}.xlsx")
+        path("logs/${task.process}.{log,err}")
 
-//     shell:
-//     '''
-//         mkdir -p !{task.process} logs/
-//         log_file=logs/!{task.process}.log
-//         err_file=logs/!{task.process}.err
+    shell:
+    '''
+        mkdir -p !{task.process} logs/
+        log_file=logs/!{task.process}.log
+        err_file=logs/!{task.process}.err
 
-//         # time stamp + capturing tool versions
-//         date | tee -a $log_file $err_file > /dev/null
-//         python3 --version >> $log_file
+        # time stamp + capturing tool versions
+        date | tee -a $log_file $err_file > /dev/null
+        python3 --version >> $log_file
 
-//         performance_lineage_excel.py $(basename !{params.outdir}) \
-//             performance \
-//             --stats_json !{stats_json} \
-//             --coverage_summary !{coverage_summary} \
-//             --run_info !{run_info} \
-//             --protocol !{params.protocol} \
-//             2>> $err_file >> $log_file
+        performance_lineage_excel.py $(basename !{params.outdir}) \
+            performance \
+            --stats_json !{stats_json} \
+            --coverage_summary !{coverage_summary} \
+            --run_info !{run_info} \
+            --protocol !{params.protocol} \
+            2>> $err_file >> $log_file
 
-//         performance_lineage_excel.py $(basename !{params.outdir}) \
-//             lineage \
-//             --sample_sheet !{sample_sheet} \
-//             --pangolin_summary !{pangolin_csv} \
-//             --nextclade_summary !{nextclade_csv} \
-//             2>> $err_file >> $log_file
-//     '''
-// }
+        performance_lineage_excel.py $(basename !{params.outdir}) \
+            lineage \
+            --sample_sheet !{sample_sheet} \
+            --pangolin_summary !{pangolin_csv} \
+            --nextclade_summary !{nextclade_csv} \
+            2>> $err_file >> $log_file
+    '''
+}
 
 workflow {
     println("Currently using the Mad River workflow.")
@@ -977,38 +983,40 @@ workflow {
         }
         .set { paired_reads }
 
-    // Channel
-    //     .fromPath(params.stats_json, type:'file')
-    //     .filter { fh ->
-    //         fh.exists()
-    //     }
-    //     .ifEmpty {
-    //         exit 1, "The performance excel file needs data from a Stats.json file!\nIt should have been generated when you invoked bcl2fastq.\nDid you forget to set 'params.stats_json'?"
-    //     }
-    //     .view { "bcl2fastq Stats.json file: $it" }
-    //     .set { stats_json }
+    if (!params.skip_performance_lineage_excel) {
+        Channel
+            .fromPath(params.stats_json, type:'file')
+            .filter { fh ->
+                fh.exists()
+            }
+            .ifEmpty {
+                exit 1, "The performance excel file needs data from a Stats.json file!\nIt should have been generated when you invoked bcl2fastq.\nDid you forget to set 'params.stats_json'?"
+            }
+            .view { "bcl2fastq Stats.json file: $it" }
+            .set { stats_json }
 
-    // Channel
-    //     .fromPath(params.run_info, type:'file')
-    //     .filter { fh ->
-    //         fh.exists()
-    //     }
-    //     .ifEmpty {
-    //         exit 1, "The performance excel file needs data from a RunInfo.xml file!\nIt should have been generated on the Illumina machine.\nDid you forget to set 'params.run_info'?"
-    //     }
-    //     .view { "Illumina RunInfo.xml file: $it" }
-    //     .set { run_info_xml }
+        Channel
+            .fromPath(params.run_info, type:'file')
+            .filter { fh ->
+                fh.exists()
+            }
+            .ifEmpty {
+                exit 1, "The performance excel file needs data from a RunInfo.xml file!\nIt should have been generated on the Illumina machine.\nDid you forget to set 'params.run_info'?"
+            }
+            .view { "Illumina RunInfo.xml file: $it" }
+            .set { run_info_xml }
 
-    // Channel
-    //     .fromPath(params.sample_sheet, type:'file')
-    //     .filter { fh ->
-    //         fh.exists()
-    //     }
-    //     .ifEmpty {
-    //         exit 1, "The lineage excel file needs data from a SampleSheet.csv file!\nIt should have been generated for the Illumina machine.\nDid you forget to set 'params.sample_sheet'?"
-    //     }
-    //     .view { "SampleSheet.csv file: $it" }
-    //     .set { sample_sheet_csv }
+        Channel
+            .fromPath(params.sample_sheet, type:'file')
+            .filter { fh ->
+                fh.exists()
+            }
+            .ifEmpty {
+                exit 1, "The lineage excel file needs data from a SampleSheet.csv file!\nIt should have been generated for the Illumina machine.\nDid you forget to set 'params.sample_sheet'?"
+            }
+            .view { "SampleSheet.csv file: $it" }
+            .set { sample_sheet_csv }
+    }
 
     println("")
 
@@ -1071,12 +1079,14 @@ workflow {
             storeDir: "${params.outdir}"
         )
     SPIKE_GENE_COVERAGE(ch_combined_nextclade_report)
-    // PERFORMANCE_LINEAGE_EXCEL(
-    //     stats_json,
-    //     SUMMARIZE_COVERAGE.out.coverage_summary,
-    //     ch_combined_pangolin_report,
-    //     ch_combined_nextclade_report,
-    //     run_info_xml,
-    //     sample_sheet_csv
-    // )
+    if (!params.skip_performance_lineage_excel) {
+        PERFORMANCE_LINEAGE_EXCEL(
+            stats_json,
+            SUMMARIZE_COVERAGE.out.coverage_summary,
+            ch_combined_pangolin_report,
+            ch_combined_nextclade_report,
+            run_info_xml,
+            sample_sheet_csv
+        )
+    }
 }
