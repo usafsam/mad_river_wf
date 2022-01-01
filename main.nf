@@ -31,7 +31,7 @@ if (!params.skip_performance_lineage_excel) {
 
 params.maxcpus = Runtime.runtime.availableProcessors()
 println("The maximum number of CPUs used in this workflow is ${params.maxcpus}")
-if (params.maxcpus < 5) {
+if (params.maxcpus < 8) {
     params.medcpus = params.maxcpus
 } else {
     params.medcpus = 8
