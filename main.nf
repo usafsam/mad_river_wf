@@ -190,6 +190,12 @@ workflow {
     // =================
     SAMTOOLS_SORT_INDEX(SOFT_TRIM.out.soft_trimmed_sams) // out: bamfile, bamfile_index, _
     IVAR_CONSENSUS(SAMTOOLS_SORT_INDEX.out.bamfile) // out: consensus, consensus_collect, _
+    IVAR_CONSENSUS.out.consensus_collect |
+        collectFile(
+            name: "${file(params.outdir).getSimpleName()}_consensus.fasta",
+            sort: true,
+            storeDir: "${params.outdir}"
+        )
     ch_ivar_variants = SAMTOOLS_SORT_INDEX.out.bamfile |
         combine(GRAB_NEXTCLADE_DATA.out.reference_genome) |
         combine(GRAB_IVAR_GFF.out.gff_file_ivar)
