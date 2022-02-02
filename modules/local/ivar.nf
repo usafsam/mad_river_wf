@@ -31,6 +31,7 @@ process IVAR_CONSENSUS {
         ivar consensus -p !{task.process}/!{sample}.consensus \
             -t 0.6 \
             -m !{params.mincov} \
+            -i !{sample} \
             2>> $err_file >> $log_file
     '''
 }
