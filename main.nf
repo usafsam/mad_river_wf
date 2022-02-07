@@ -190,7 +190,7 @@ workflow {
     // =================
     SAMTOOLS_SORT_INDEX(SOFT_TRIM.out.soft_trimmed_sams) // out: bamfile, bamfile_index, _
     IVAR_CONSENSUS(SAMTOOLS_SORT_INDEX.out.bamfile) // out: consensus, consensus_collect, _
-    IVAR_CONSENSUS.out.consensus_collect |
+    ch_combined_consensus_fasta = IVAR_CONSENSUS.out.consensus_collect |
         collectFile(
             name: "${file(params.outdir).getSimpleName()}_consensus.fasta",
             sort: true,
@@ -204,34 +204,15 @@ workflow {
 
     // PANGOLIN AND NEXTCLADE
     // ======================
-    PANGOLIN(IVAR_CONSENSUS.out.consensus) // out: pangolin, _
-    ch_combined_pangolin_report = PANGOLIN.out.pangolin |
-        collectFile(
-            name: "combined_lineage_report.csv",
-            keepHeader: true,
-            newLine: true,
-            sort: true,
-            storeDir: "${params.outdir}"
-        )
-    ch_nextclade = IVAR_CONSENSUS.out.consensus |
-        combine(GRAB_NEXTCLADE_DATA.out.reference_nextclade) |
-        combine(nextclade_primers)
-    NEXTCLADE(ch_nextclade) // out: nextclade, _
-    ch_combined_nextclade_report = NEXTCLADE.out.nextclade |
-        collectFile(
-            name: "combined_nextclade_report.csv",
-            keepHeader: true,
-            newLine: true,
-            sort: true,
-            storeDir: "${params.outdir}"
-        )
-    SPIKE_GENE_COVERAGE(ch_combined_nextclade_report)
+    PANGOLIN(ch_combined_consensus_fasta) // out: pangolin, _
+    NEXTCLADE(ch_combined_consensus_fasta, GRAB_NEXTCLADE_DATA.out.reference_nextclade, nextclade_primers) // out: nextclade_csv, nextclade_json, nextclade_auspice_json, nextclade_out_files, _
+    SPIKE_GENE_COVERAGE(NEXTCLADE.out.nextclade_csv)
     if (!params.skip_performance_lineage_excel) {
         PERFORMANCE_LINEAGE_EXCEL(
             stats_json,
             SUMMARIZE_COVERAGE.out.coverage_summary,
-            ch_combined_pangolin_report,
-            ch_combined_nextclade_report,
+            PANGOLIN.out.pangolin,
+            NEXTCLADE.out.nextclade_csv,
             run_info_xml,
             sample_sheet_csv
         )

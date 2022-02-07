@@ -27,24 +27,28 @@ process GRAB_NEXTCLADE_DATA {
 params.nextclade_options = ''
 process NEXTCLADE {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
-    publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*"
-    tag "${sample}"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/nextclade.*"
     echo false
     cpus params.medcpus
     container params.container_nextclade
 
     input:
-        tuple val(sample), file(fasta), file(ref_nextclade), file(primers_csv)
+        file(fasta)
+        file(ref_nextclade)
+        file(primers_csv)
 
     output:
-        path("${task.process}/${sample}_nextclade.csv"), emit: nextclade
-        path("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+        path("${task.process}/nextclade.csv"), emit: nextclade_csv
+        path("${task.process}/nextclade.json"), emit: nextclade_json
+        path("${task.process}/nextclade.auspice.json"), emit: nextclade_auspice_json
+        path("${task.process}/nextclade.*"), emit: nextclade_out_files
+        path("logs/${task.process}/${workflow.sessionId}.{log,err}")
 
     shell:
     '''
         mkdir -p !{task.process} logs/!{task.process}
-        log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-        err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+        log_file=logs/!{task.process}/!{workflow.sessionId}.log
+        err_file=logs/!{task.process}/!{workflow.sessionId}.err
 
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
@@ -56,10 +60,10 @@ process NEXTCLADE {
             --input-dataset !{ref_nextclade} \
             --input-pcr-primers !{primers_csv} \
             --output-dir !{task.process}/ \
-            --output-basename !{sample}_nextclade \
-            --output-csv !{task.process}/!{sample}_nextclade.csv \
-            --output-json !{task.process}/!{sample}_nextclade.json \
-            --output-tree !{task.process}/!{sample}_nextclade.auspice.json \
+            --output-basename nextclade \
+            --output-csv !{task.process}/nextclade.csv \
+            --output-json !{task.process}/nextclade.json \
+            --output-tree !{task.process}/nextclade.auspice.json \
             !{params.nextclade_options} \
             2>> $err_file >> $log_file
     '''
