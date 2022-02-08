@@ -60,6 +60,7 @@ include {
 include { GRAB_NEXTCLADE_DATA; NEXTCLADE } from './modules/local/nextclade'
 include { PANGOLIN } from './modules/local/pangolin'
 include { SAMTOOLS_SORT_INDEX } from './modules/local/samtools'
+include { VADR } from './modules/local/vadr'
 
 workflow {
     println("Currently using the Mad River workflow.")
@@ -202,10 +203,11 @@ workflow {
     IVAR_VARIANTS(ch_ivar_variants) // out: ivar_tsvs, _
     TRAFFIC_LIGHT_PLOT(IVAR_VARIANTS.out.ivar_tsvs.toSortedList(), SUMMARIZE_COVERAGE.out.coverage_summary) // out: _, _
 
-    // PANGOLIN AND NEXTCLADE
-    // ======================
+    // PANGOLIN, NEXTCLADE, AND VADR
+    // =============================
     PANGOLIN(ch_combined_consensus_fasta) // out: pangolin, _
     NEXTCLADE(ch_combined_consensus_fasta, GRAB_NEXTCLADE_DATA.out.reference_nextclade, nextclade_primers) // out: nextclade_csv, nextclade_json, nextclade_auspice_json, nextclade_out_files, _
+    VADR(ch_combined_consensus_fasta) // out: vadr, vadr_file, _
     SPIKE_GENE_COVERAGE(NEXTCLADE.out.nextclade_csv)
     if (!params.skip_performance_lineage_excel) {
         PERFORMANCE_LINEAGE_EXCEL(
