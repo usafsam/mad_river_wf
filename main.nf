@@ -8,7 +8,6 @@ params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/results'
 if (!params.skip_performance_lineage_excel) {
     params.run_info = workflow.launchDir + '/RunInfo.xml'
-    params.sample_sheet = workflow.launchDir + '/SampleSheet.csv'
     params.stats_json = workflow.launchDir + '/Stats/Stats.json'
 }
 
@@ -147,17 +146,6 @@ workflow {
             }
             .view { "Illumina RunInfo.xml file: $it" }
             .set { run_info_xml }
-
-        Channel
-            .fromPath(params.sample_sheet, type:'file')
-            .filter { fh ->
-                fh.exists()
-            }
-            .ifEmpty {
-                exit 1, "The lineage excel file needs data from a SampleSheet.csv file!\nIt should have been generated for the Illumina machine.\nDid you forget to set 'params.sample_sheet'?"
-            }
-            .view { "SampleSheet.csv file: $it" }
-            .set { sample_sheet_csv }
     }
 
     println("")
@@ -215,8 +203,7 @@ workflow {
             SUMMARIZE_COVERAGE.out.coverage_summary,
             PANGOLIN.out.pangolin,
             NEXTCLADE.out.nextclade_csv,
-            run_info_xml,
-            sample_sheet_csv
+            run_info_xml
         )
     }
 }

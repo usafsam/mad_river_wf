@@ -36,7 +36,6 @@ process PERFORMANCE_LINEAGE_EXCEL {
         file(pangolin_csv)
         file(nextclade_csv)
         file(run_info)
-        file(sample_sheet)
 
     output:
         path("${file(params.outdir).getSimpleName()}_{lineage,performance}.xlsx")
@@ -62,7 +61,6 @@ process PERFORMANCE_LINEAGE_EXCEL {
 
         performance_lineage_excel.py $(basename !{params.outdir}) \
             lineage \
-            --sample_sheet !{sample_sheet} \
             --pangolin_summary !{pangolin_csv} \
             --nextclade_summary !{nextclade_csv} \
             2>> $err_file >> $log_file

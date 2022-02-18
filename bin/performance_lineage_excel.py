@@ -116,56 +116,21 @@ def performance_excel_workbook(stats_json, coverage_summary, run_info, protocol)
 
     return wb
 
-def lineage_excel_workbook(sample_sheet, pangolin_summary, nextclade_summary):
-    sample_sheet_raw_lines = sample_sheet.read().splitlines()
-    sample_sheet_data_block_index = [i for i, line in enumerate(sample_sheet_raw_lines) if line.startswith("[Data]")][0]
-    sample_sheet_data_block = sample_sheet_raw_lines[sample_sheet_data_block_index+1:]
-    sample_sheet_data_dialect = csv.Sniffer().sniff(sample_sheet_data_block[0])
-    sample_sheet_data = list(csv.reader(sample_sheet_data_block, dialect=sample_sheet_data_dialect))
-    sample_id_index = sample_sheet_data[0].index("Sample_ID")
-    sample_ids = [row[sample_id_index].strip() for row in sample_sheet_data]
-    
+def lineage_excel_workbook(pangolin_summary, nextclade_summary):
     wb = Workbook()
     ws_pangolin = wb.active
     ws_pangolin.title = "Pangolin"
 
     pangolin_dialect = csv.Sniffer().sniff(pangolin_summary.readline())
     pangolin_summary.seek(0)
-    for i, row in enumerate(filter(None, csv.reader(pangolin_summary, dialect=pangolin_dialect))):
-        if i == 0:
-            ws_pangolin.append(row)
-            continue
-        # print(f"lol @ {row[0]}")
-        try:
-            sample_name = [s for s in sample_ids if s.lower() in row[0].lower()][0]
-        except IndexError as e:
-            # print(sample_ids)
-            if "undetermined" in row[0].lower():
-                ws_pangolin.append(["Undetermined"] + row[1:])
-                continue
-            raise e
-        else:
-            ws_pangolin.append([sample_name] + row[1:])
+    for row in filter(None, csv.reader(pangolin_summary, dialect=pangolin_dialect)):
+        ws_pangolin.append(row)
 
     ws_nextclade = wb.create_sheet("Nextclade")
     nextclade_dialect = csv.Sniffer().sniff(nextclade_summary.readline())
     nextclade_summary.seek(0)
-    for i, row in enumerate(filter(None, csv.reader(nextclade_summary, dialect=nextclade_dialect))):
-        # print(row)
-        if i == 0:
-            ws_nextclade.append(row)
-            continue
-        # print(f"lol @ {row[0]}")
-        try:
-            sample_name = [s for s in sample_ids if s.lower() in row[0].lower()][0]
-        except IndexError as e:
-            # print(sample_ids)
-            if "undetermined" in row[0].lower():
-                ws_nextclade.append(["Undetermined"] + row[1:])
-                continue
-            raise e
-        else:
-            ws_nextclade.append([sample_name] + row[1:])
+    for row in filter(None, csv.reader(nextclade_summary, dialect=nextclade_dialect)):
+        ws_nextclade.append(row)
  
     return wb
 
@@ -185,7 +150,6 @@ if __name__ == "__main__":
     performance_parser.add_argument("--protocol", type=str, required=True, help="This run's protocol")
 
     lineage_parser = subparsers.add_parser("lineage", help="Generate lineage excel")
-    lineage_parser.add_argument("--sample_sheet", type=argparse.FileType("r"), required=True, help="Sample sheet fed into the Illumina machine")
     lineage_parser.add_argument("--pangolin_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Pangolin lineages")
     lineage_parser.add_argument("--nextclade_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Nextclade lineages")
 
@@ -194,4 +158,4 @@ if __name__ == "__main__":
     if args.which == "performance":
         performance_excel_workbook(args.stats_json, args.coverage_summary, args.run_info, args.protocol).save(f"{args.prefix}_performance.xlsx")
     if args.which == "lineage":
-        lineage_excel_workbook(args.sample_sheet, args.pangolin_summary, args.nextclade_summary).save(f"{args.prefix}_lineage.xlsx")
+        lineage_excel_workbook(args.pangolin_summary, args.nextclade_summary).save(f"{args.prefix}_lineage.xlsx")
