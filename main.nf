@@ -2,11 +2,11 @@
 
 nextflow.enable.dsl=2
 
-params.skip_performance_lineage_excel = false
+params.skip_performance_excel = false
 
 params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/results'
-if (!params.skip_performance_lineage_excel) {
+if (!params.skip_performance_excel) {
     params.run_info = workflow.launchDir + '/RunInfo.xml'
     params.stats_json = workflow.launchDir + '/Stats/Stats.json'
 }
@@ -24,7 +24,7 @@ params.container_pangolin = 'staphb/pangolin:latest'
 params.container_samtools = 'staphb/samtools:latest'
 
 params.mincov = 15
-if (!params.skip_performance_lineage_excel) {
+if (!params.skip_performance_excel) {
     params.protocol = '1200Midnight_XT'
 }
 
@@ -52,7 +52,8 @@ include {
 include { IVAR_CONSENSUS; IVAR_VARIANTS } from './modules/local/ivar'
 include {
     GRAB_IVAR_GFF;
-    PERFORMANCE_LINEAGE_EXCEL;
+    LINEAGE_EXCEL;
+    PERFORMANCE_EXCEL;
     SPIKE_GENE_COVERAGE;
     TRAFFIC_LIGHT_PLOT
 } from './modules/local/misc'
@@ -124,7 +125,7 @@ workflow {
         }
         .set { paired_reads }
 
-    if (!params.skip_performance_lineage_excel) {
+    if (!params.skip_performance_excel) {
         Channel
             .fromPath(params.stats_json, type:'file')
             .filter { fh ->
@@ -197,13 +198,15 @@ workflow {
     NEXTCLADE(ch_combined_consensus_fasta, GRAB_NEXTCLADE_DATA.out.reference_nextclade, nextclade_primers) // out: nextclade_csv, nextclade_json, nextclade_auspice_json, nextclade_out_files, _
     VADR(ch_combined_consensus_fasta) // out: vadr, vadr_file, _
     SPIKE_GENE_COVERAGE(NEXTCLADE.out.nextclade_csv)
-    if (!params.skip_performance_lineage_excel) {
-        PERFORMANCE_LINEAGE_EXCEL(
+    if (!params.skip_performance_excel) {
+        PERFORMANCE_EXCEL(
             stats_json,
             SUMMARIZE_COVERAGE.out.coverage_summary,
-            PANGOLIN.out.pangolin,
-            NEXTCLADE.out.nextclade_csv,
             run_info_xml
+        )
+        LINEAGE_EXCEL(
+            PANGOLIN.out.pangolin,
+            NEXTCLADE.out.nextclade_csv
         )
     }
 }
