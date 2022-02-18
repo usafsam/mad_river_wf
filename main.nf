@@ -198,15 +198,15 @@ workflow {
     NEXTCLADE(ch_combined_consensus_fasta, GRAB_NEXTCLADE_DATA.out.reference_nextclade, nextclade_primers) // out: nextclade_csv, nextclade_json, nextclade_auspice_json, nextclade_out_files, _
     VADR(ch_combined_consensus_fasta) // out: vadr, vadr_file, _
     SPIKE_GENE_COVERAGE(NEXTCLADE.out.nextclade_csv)
+    LINEAGE_EXCEL(
+        PANGOLIN.out.pangolin,
+        NEXTCLADE.out.nextclade_csv
+    )
     if (!params.skip_performance_excel) {
         PERFORMANCE_EXCEL(
             stats_json,
             SUMMARIZE_COVERAGE.out.coverage_summary,
             run_info_xml
-        )
-        LINEAGE_EXCEL(
-            PANGOLIN.out.pangolin,
-            NEXTCLADE.out.nextclade_csv
         )
     }
 }
