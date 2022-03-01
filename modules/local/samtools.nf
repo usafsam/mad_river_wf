@@ -1,7 +1,7 @@
 process SAMTOOLS_SORT_INDEX {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
-    publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_trimclip.sorted.bam.gz"
-    publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_trimclip.sorted.bam.gz.bai"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_trimclip.sorted.bam"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_trimclip.sorted.bam.bai"
     tag "${sample}"
     echo false
     cpus params.medcpus
@@ -11,8 +11,8 @@ process SAMTOOLS_SORT_INDEX {
         tuple val(sample), file(samfile)
 
     output:
-        tuple val(sample), path("${task.process}/${sample}_trimclip.sorted.bam.gz"), emit: bamfile
-        path("${task.process}/${sample}_trimclip.sorted.bam.gz.bai"), emit: bamfile_index
+        tuple val(sample), path("${task.process}/${sample}_trimclip.sorted.bam"), emit: bamfile
+        path("${task.process}/${sample}_trimclip.sorted.bam.bai"), emit: bamfile_index
         path("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
     shell:
@@ -27,12 +27,12 @@ process SAMTOOLS_SORT_INDEX {
 
         samtools view -bShu !{samfile} | \
             samtools sort \
-                -o !{task.process}/!{sample}_trimclip.sorted.bam.gz \
+                -o !{task.process}/!{sample}_trimclip.sorted.bam \
                 -@ !{task.cpus} \
                 2>> $err_file >> $log_file
         samtools index \
-            !{task.process}/!{sample}_trimclip.sorted.bam.gz \
-            !{task.process}/!{sample}_trimclip.sorted.bam.gz.bai \
+            !{task.process}/!{sample}_trimclip.sorted.bam \
+            !{task.process}/!{sample}_trimclip.sorted.bam.bai \
             2>> $err_file >> $log_file
     '''
 }
