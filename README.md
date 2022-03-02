@@ -25,7 +25,6 @@ nextflow run usafsam/mad_river_wf \
     --reads {READS_DIR} \
     --run_info {PATH_TO}/RunInfo.xml \
     --stats_json {PATH_TO}/Stats.json \
-    --sample_sheet {PATH_TO}/SampleSheet.csv \
     --outdir {OUTDIR}
 ```
 
