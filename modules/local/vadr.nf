@@ -7,7 +7,7 @@ process VADR {
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*"
     echo false
     cpus params.medcpus
-    container 'staphb/vadr:latest'
+    container params.container_vadr
 
     input:
         file(fasta)

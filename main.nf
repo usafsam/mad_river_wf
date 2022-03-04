@@ -22,6 +22,7 @@ params.container_ivar = 'staphb/ivar:latest'
 params.container_nextclade = 'nextstrain/nextclade:latest'
 params.container_pangolin = 'staphb/pangolin:latest'
 params.container_samtools = 'staphb/samtools:latest'
+params.container_vadr = 'staphb/vadr:latest'
 
 params.mincov = 15
 if (!params.skip_performance_excel) {

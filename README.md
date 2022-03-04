@@ -12,6 +12,7 @@ The tools used are mostly sourced from [the Docker images provided by StaPH-B](h
 - [nextclade](https://github.com/nextstrain/nextclade) (_no Docker image provided by StaPH-B as of 2021-08-17_)
 - [pangolin](https://cov-lineages.org/resources/pangolin.html)
 - [samtools](https://www.htslib.org/)
+- [VADR](https://github.com/ncbi/vadr)
 
 However, the Docker images and the exact Conda environments can be customized to your liking.
 
