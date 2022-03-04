@@ -33,6 +33,7 @@ process LINEAGE_EXCEL {
     input:
         file(pangolin_csv)
         file(nextclade_csv)
+        file(vadr_annotations)
 
     output:
         path("${file(params.outdir).getSimpleName()}_lineage.xlsx")
@@ -52,6 +53,7 @@ process LINEAGE_EXCEL {
             lineage \
             --pangolin_summary !{pangolin_csv} \
             --nextclade_summary !{nextclade_csv} \
+            --vadr_annotations !{vadr_annotations} \
             2>> $err_file >> $log_file
     '''
 }
