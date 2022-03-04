@@ -24,22 +24,51 @@ process GRAB_IVAR_GFF {
     '''
 }
 
-process PERFORMANCE_LINEAGE_EXCEL {
+process LINEAGE_EXCEL {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
-    publishDir "${params.outdir}", mode: 'copy', pattern: "*_{lineage,performance}.xlsx"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "*_lineage.xlsx"
+    echo false
+    conda "${workflow.projectDir}/env/performance_lineage_excel.yml"
+
+    input:
+        file(pangolin_csv)
+        file(nextclade_csv)
+
+    output:
+        path("${file(params.outdir).getSimpleName()}_lineage.xlsx")
+        path("logs/${task.process}.{log,err}")
+
+    shell:
+    '''
+        mkdir -p !{task.process} logs/
+        log_file=logs/!{task.process}.log
+        err_file=logs/!{task.process}.err
+
+        # time stamp + capturing tool versions
+        date | tee -a $log_file $err_file > /dev/null
+        python3 --version >> $log_file
+
+        performance_lineage_excel.py $(basename !{params.outdir}) \
+            lineage \
+            --pangolin_summary !{pangolin_csv} \
+            --nextclade_summary !{nextclade_csv} \
+            2>> $err_file >> $log_file
+    '''
+}
+
+process PERFORMANCE_EXCEL {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
+    publishDir "${params.outdir}", mode: 'copy', pattern: "*_performance.xlsx"
     echo false
     conda "${workflow.projectDir}/env/performance_lineage_excel.yml"
 
     input:
         file(stats_json)
         file(coverage_summary)
-        file(pangolin_csv)
-        file(nextclade_csv)
         file(run_info)
-        file(sample_sheet)
 
     output:
-        path("${file(params.outdir).getSimpleName()}_{lineage,performance}.xlsx")
+        path("${file(params.outdir).getSimpleName()}_performance.xlsx")
         path("logs/${task.process}.{log,err}")
 
     shell:
@@ -58,13 +87,6 @@ process PERFORMANCE_LINEAGE_EXCEL {
             --coverage_summary !{coverage_summary} \
             --run_info !{run_info} \
             --protocol !{params.protocol} \
-            2>> $err_file >> $log_file
-
-        performance_lineage_excel.py $(basename !{params.outdir}) \
-            lineage \
-            --sample_sheet !{sample_sheet} \
-            --pangolin_summary !{pangolin_csv} \
-            --nextclade_summary !{nextclade_csv} \
             2>> $err_file >> $log_file
     '''
 }
