@@ -30,5 +30,10 @@ process PANGOLIN {
             --threads !{task.cpus} \
             !{fasta} \
             2>> $err_file >> $log_file
+
+        # FIXME: Pangolin v4.0 will sort by the first column
+        # Stopgap fix adapted from https://www.gnu.org/software/coreutils/manual/html_node/Header-lines.html
+        mv !{task.process}/lineage_report.csv lineage_report.csv
+        ( sed -u 1q; sort -k 1,1n -t',' ) < lineage_report.csv > !{task.process}/lineage_report.csv
     '''
 }
