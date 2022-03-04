@@ -55,6 +55,7 @@ process NEXTCLADE {
         nextclade --version >> $log_file
 
         nextclade run \
+            --in-order \
             --jobs !{task.cpus} \
             -i !{fasta} \
             --input-dataset !{ref_nextclade} \

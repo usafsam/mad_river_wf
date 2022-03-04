@@ -184,7 +184,7 @@ workflow {
     ch_combined_consensus_fasta = IVAR_CONSENSUS.out.consensus_collect |
         collectFile(
             name: "${file(params.outdir).getSimpleName()}_consensus.fasta",
-            sort: true,
+            sort: { it.getSimpleName() },
             storeDir: "${params.outdir}"
         )
     ch_ivar_variants = SAMTOOLS_SORT_INDEX.out.bamfile |
