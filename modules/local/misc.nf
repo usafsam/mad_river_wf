@@ -1,13 +1,15 @@
-process GRAB_IVAR_GFF {
+process DATA_PREP {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     echo false
-    container params.container_biocontainers
+    container params.container_python
 
     input:
         file(gff_file_gzip)
+        file(primer_tsv)
 
     output:
         path("*.gff"), emit: gff_file_ivar
+        path("*.fasta"), emit: primer_fasta
 
     shell:
     '''
@@ -21,6 +23,11 @@ process GRAB_IVAR_GFF {
 
         gunzip -f !{gff_file_gzip} \
             2>> $err_file >> $log_file
+
+        echo "" >> $log_file
+        python3 --version >> $log_file
+
+        process_primer_reference.py !{primer_tsv}
     '''
 }
 

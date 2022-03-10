@@ -12,15 +12,15 @@ if (!params.skip_performance_excel) {
 }
 
 params.ivar_gff_gzip_file = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/858/895/GCA_009858895.3_ASM985889v3/GCA_009858895.3_ASM985889v3_genomic.gff.gz"
-params.primer_fasta = workflow.projectDir + "/reference/primers.fasta"
+params.primer_tsv = workflow.projectDir + "/reference/Midnight_Primers_v1.0.tsv"
 params.adapter_fasta = workflow.projectDir + "/reference/adapters.fa.gz"
 params.nextclade_primers = workflow.projectDir + "/reference/midnight_primers_nextclade.csv"
 
-params.container_biocontainers = 'biocontainers/biocontainers:v1.2.0_cv1'
 params.container_bbtools = 'staphb/bbtools:latest'
 params.container_ivar = 'staphb/ivar:latest'
 params.container_nextclade = 'nextstrain/nextclade:latest'
 params.container_pangolin = 'staphb/pangolin:latest'
+params.container_python = 'python:latest'
 params.container_samtools = 'staphb/samtools:latest'
 params.container_vadr = 'staphb/vadr:latest'
 
@@ -52,7 +52,7 @@ include {
 } from './modules/local/bbtools'
 include { IVAR_CONSENSUS; IVAR_VARIANTS } from './modules/local/ivar'
 include {
-    GRAB_IVAR_GFF;
+    DATA_PREP;
     LINEAGE_EXCEL;
     PERFORMANCE_EXCEL;
     SPIKE_GENE_COVERAGE;
@@ -81,15 +81,15 @@ workflow {
         .set { ivar_gff_gzip_file_checked }
 
     Channel
-        .fromPath(params.primer_fasta, type:'file')
+        .fromPath(params.primer_tsv, type:'file')
         .filter { fh ->
             fh.exists()
         }
         .ifEmpty {
-            exit 1, "A FASTA file for primers is required!\nDid you forget to set 'params.primer_fasta'?"
+            exit 1, "A TSV file for primers is required!\nDid you forget to set 'params.primer_tsv'?"
         }
-        .view { "Primer FASTA: $it" }
-        .set { primer_fasta }
+        .view { "Primer TSV: $it" }
+        .set { primer_tsv }
 
     Channel
         .fromPath(params.adapter_fasta, type:'file')
@@ -155,7 +155,7 @@ workflow {
     // GRAB DATA
     // =========
     GRAB_NEXTCLADE_DATA() // out: reference_genome, reference_nextclade
-    GRAB_IVAR_GFF(ivar_gff_gzip_file_checked) // out: gff_file_ivar
+    DATA_PREP(ivar_gff_gzip_file_checked, primer_tsv) // out: gff_file_ivar, primer_fasta
 
     // PRE-ALIGNMENT
     // =============
@@ -164,7 +164,7 @@ workflow {
     TAKE_VIRAL(BBMERGE.out.bbmerged_specimens, GRAB_NEXTCLADE_DATA.out.reference_genome) // out: viral_specimens, _
     ch_trim_adapters = TAKE_VIRAL.out.viral_specimens | combine(adapter_fasta)
     TRIM_ADAPTERS(ch_trim_adapters) // out: adapter_trimmed_specimens, _
-    ch_trim_primers = TRIM_ADAPTERS.out.adapter_trimmed_specimens | combine(primer_fasta)
+    ch_trim_primers = TRIM_ADAPTERS.out.adapter_trimmed_specimens | combine(DATA_PREP.out.primer_fasta)
     TRIM_PRIMERS(ch_trim_primers) // out: primer_trimmed_specimens, _
 
     BBMAP_ALIGN(TRIM_PRIMERS.out.primer_trimmed_specimens, GRAB_NEXTCLADE_DATA.out.reference_genome) // out: aligned_sams, _
@@ -189,7 +189,7 @@ workflow {
         )
     ch_ivar_variants = SAMTOOLS_SORT_INDEX.out.bamfile |
         combine(GRAB_NEXTCLADE_DATA.out.reference_genome) |
-        combine(GRAB_IVAR_GFF.out.gff_file_ivar)
+        combine(DATA_PREP.out.gff_file_ivar)
     IVAR_VARIANTS(ch_ivar_variants) // out: ivar_tsvs, _
     TRAFFIC_LIGHT_PLOT(IVAR_VARIANTS.out.ivar_tsvs.toSortedList(), SUMMARIZE_COVERAGE.out.coverage_summary) // out: _, _
 
