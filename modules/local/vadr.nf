@@ -14,7 +14,7 @@ process VADR {
     
     output:
         path("${task.process}/*"), optional: true, emit: vadr
-        path("${task.process}/vadr.vadr.sqa"), optional: true, emit: vadr_file
+        path("${task.process}/${task.process}.vadr.sqa"), optional: true, emit: vadr_file
         path("logs/${task.process}/${workflow.sessionId}.{log,err}")
     
     shell:

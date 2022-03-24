@@ -116,7 +116,7 @@ def performance_excel_workbook(stats_json, coverage_summary, run_info, protocol)
 
     return wb
 
-def lineage_excel_workbook(pangolin_summary, nextclade_summary):
+def lineage_excel_workbook(pangolin_summary, nextclade_summary, vadr_annotations):
     wb = Workbook()
     ws_pangolin = wb.active
     ws_pangolin.title = "Pangolin"
@@ -131,7 +131,26 @@ def lineage_excel_workbook(pangolin_summary, nextclade_summary):
     nextclade_summary.seek(0)
     for row in filter(None, csv.reader(nextclade_summary, dialect=nextclade_dialect)):
         ws_nextclade.append(row)
- 
+
+    ws_vadr_annotations = wb.create_sheet("VADR Annotations")
+    ws_vadr_annotations.append([
+        "Name",
+        "Length",
+        "Pass/Fail",
+        "Annotated?",
+        "Best Model",
+        "Group",
+        "Subgroup",
+        "# of Features Annotated",
+        "# of Features Not Annotated",
+        "# of 5' Truncated Features",
+        "# of 3' Truncated Features",
+        "# of Per-Feature Alerts",
+        "Per-Sequence Alerts"
+        ])
+    for row in filter(lambda x: not x.startswith("#"), vadr_annotations.readlines()):
+        ws_vadr_annotations.append(row.strip().split()[1:])
+
     return wb
 
 
@@ -152,10 +171,11 @@ if __name__ == "__main__":
     lineage_parser = subparsers.add_parser("lineage", help="Generate lineage excel")
     lineage_parser.add_argument("--pangolin_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Pangolin lineages")
     lineage_parser.add_argument("--nextclade_summary", type=argparse.FileType("r"), required=True, help="Tabular summary of Nextclade lineages")
+    lineage_parser.add_argument("--vadr_annotations", type=argparse.FileType("r"), required=True, help="Tabular summary of VADR annotations")
 
     args = parser.parse_args()
 
     if args.which == "performance":
         performance_excel_workbook(args.stats_json, args.coverage_summary, args.run_info, args.protocol).save(f"{args.prefix}_performance.xlsx")
     if args.which == "lineage":
-        lineage_excel_workbook(args.pangolin_summary, args.nextclade_summary).save(f"{args.prefix}_lineage.xlsx")
+        lineage_excel_workbook(args.pangolin_summary, args.nextclade_summary, args.vadr_annotations).save(f"{args.prefix}_lineage.xlsx")

@@ -201,7 +201,8 @@ workflow {
     SPIKE_GENE_COVERAGE(NEXTCLADE.out.nextclade_csv)
     LINEAGE_EXCEL(
         PANGOLIN.out.pangolin,
-        NEXTCLADE.out.nextclade_csv
+        NEXTCLADE.out.nextclade_csv,
+        VADR.out.vadr_file
     )
     if (!params.skip_performance_excel) {
         PERFORMANCE_EXCEL(
