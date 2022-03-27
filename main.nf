@@ -12,7 +12,7 @@ if (!params.skip_performance_excel) {
 }
 
 params.ivar_gff_gzip_file = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/858/895/GCA_009858895.3_ASM985889v3/GCA_009858895.3_ASM985889v3_genomic.gff.gz"
-params.primer_tsv = workflow.projectDir + "/reference/Midnight_Primers_v1.0.tsv"
+params.primer_tsv = workflow.projectDir + "/reference/IDT_Midnight_Primers_v2.0.tsv"
 params.adapter_fasta = workflow.projectDir + "/reference/adapters.fa.gz"
 params.nextclade_primers = workflow.projectDir + "/reference/midnight_primers_nextclade.csv"
 
