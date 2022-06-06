@@ -35,7 +35,6 @@ process NEXTCLADE {
     input:
         file(fasta)
         file(ref_nextclade)
-        file(primers_csv)
 
     output:
         path("${task.process}/nextclade.csv"), emit: nextclade_csv
@@ -59,7 +58,6 @@ process NEXTCLADE {
             --jobs !{task.cpus} \
             -i !{fasta} \
             --input-dataset !{ref_nextclade} \
-            --input-pcr-primers !{primers_csv} \
             --output-dir !{task.process}/ \
             --output-basename nextclade \
             --output-csv !{task.process}/nextclade.csv \

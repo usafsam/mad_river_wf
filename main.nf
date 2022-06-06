@@ -14,7 +14,6 @@ if (!params.skip_performance_excel) {
 params.ivar_gff_gzip_file = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/858/895/GCA_009858895.3_ASM985889v3/GCA_009858895.3_ASM985889v3_genomic.gff.gz"
 params.primer_tsv = workflow.projectDir + "/reference/IDT_Midnight_Primers_v2.0.tsv"
 params.adapter_fasta = workflow.projectDir + "/reference/adapters.fa.gz"
-params.nextclade_primers = workflow.projectDir + "/reference/midnight_primers_nextclade.csv"
 
 params.container_bbtools = 'staphb/bbtools:latest'
 params.container_ivar = 'staphb/ivar:latest'
@@ -103,17 +102,6 @@ workflow {
         .set { adapter_fasta }
 
     Channel
-        .fromPath(params.nextclade_primers, type:'file')
-        .filter { fh ->
-            fh.exists()
-        }
-        .ifEmpty {
-            exit 1, "Nextclade requires a CSV file for primers!\nDid you forget to set 'params.nextclade_primers'?"
-        }
-        .view { "Nextclade primers CSV: $it"} 
-        .set { nextclade_primers }
-
-    Channel
         .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq.gz", "${params.reads}/*_{1,2}.fastq*"], size: 2)
         .map { reads ->
             tuple(reads[0].replaceAll(~/_S[0-9]+(_L[0-9]+)?/,""), reads[1])
@@ -196,7 +184,7 @@ workflow {
     // PANGOLIN, NEXTCLADE, AND VADR
     // =============================
     PANGOLIN(ch_combined_consensus_fasta) // out: pangolin, _
-    NEXTCLADE(ch_combined_consensus_fasta, GRAB_NEXTCLADE_DATA.out.reference_nextclade, nextclade_primers) // out: nextclade_csv, nextclade_json, nextclade_auspice_json, nextclade_out_files, _
+    NEXTCLADE(ch_combined_consensus_fasta, GRAB_NEXTCLADE_DATA.out.reference_nextclade) // out: nextclade_csv, nextclade_json, nextclade_auspice_json, nextclade_out_files, _
     VADR(ch_combined_consensus_fasta) // out: vadr, vadr_file, _
     SPIKE_GENE_COVERAGE(NEXTCLADE.out.nextclade_csv)
     LINEAGE_EXCEL(
