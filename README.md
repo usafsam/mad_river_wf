@@ -46,7 +46,7 @@ Here is a table that shows which primers are included in each version of the set
 | 22\_RIGHT\_OMICRON (G22599A) | :x: | :x: | :white_check_mark: | :white_check_mark: |
 | 23\_LEFT\_OMICRON (C22522T) | :x: | :x: | :white_check_mark: | :white_check_mark: |
 | 26\_LEFT\_OMICRON (C25708T) | :x: | :x: | :white_check_mark: | :white_check_mark: |
-| 21\_RIGHT\_OMICRON (71\_RIGHT from ARTIC v4.1) | :x: | :x: | :x: | :white_check_mark: |
+| 21\_RIGHT\_ARTIC\_71R (71\_RIGHT from ARTIC v4.1) | :x: | :x: | :x: | :white_check_mark: |
 
 You can adapt the general format of the TSVs found in `reference/` to the set of primers you have.
 To use a different suite of primers other than the default, override the value of `params.primer_tsv` in a user-provided config file, and/or specify `--primer_tsv $PRIMER_SCHEME` when invoking Nextflow from the command line.
