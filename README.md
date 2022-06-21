@@ -30,3 +30,23 @@ nextflow run usafsam/mad_river_wf \
 ```
 
 If you are using this workflow locally, replace `usafsam/mad_river_wf` with the path to where this workflow resides.
+
+# Specifying Primers
+
+The default set of primers used in this workflow is version 2.0 of the SARS-CoV-2 Midnight Amplicon panel [as provided by IDT (released April 2022)](https://www.idtdna.com/pages/products/next-generation-sequencing/workflow/xgen-ngs-amplicon-sequencing/predesigned-amplicon-panels/sars-cov-2-midnight-amp-panel).
+A TSV file of these primers can be found in the `reference/` directory of this repository, along with prior versions of this set.
+A python script, `process_primer_reference.py`, takes this TSV file and produces a FASTA file of the primers (this gets used by BBDuk), along with BED files for the primers and amplicons.
+The version numbers follow the principles of [semantic versioning](https://semver.org/), where the MAJOR version corresponds to a new release from IDT and the MINOR version corresponds to one or more additional primers being spiked into the reaction mixture.
+Here is a table that shows which primers are included in each version of the set.
+
+| Primer Name | v1.0 | v1.1 | v1.2 | v2.0 |
+|---|---|---|---|---|
+| 1\_LEFT through 29\_RIGHT | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 28\_LEFT\_OMICRON (C27807T) | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 22\_RIGHT\_OMICRON (G22599A) | :x: | :x: | :white_check_mark: | :white_check_mark: |
+| 23\_LEFT\_OMICRON (C22522T) | :x: | :x: | :white_check_mark: | :white_check_mark: |
+| 26\_LEFT\_OMICRON (C25708T) | :x: | :x: | :white_check_mark: | :white_check_mark: |
+| 21\_RIGHT\_ARTIC\_71R (71\_RIGHT from ARTIC v4.1) | :x: | :x: | :x: | :white_check_mark: |
+
+You can adapt the general format of the TSVs found in `reference/` to the set of primers you have.
+To use a different suite of primers other than the default, override the value of `params.primer_tsv` in a user-provided config file, and/or specify `--primer_tsv $PRIMER_SCHEME` when invoking Nextflow from the command line.
