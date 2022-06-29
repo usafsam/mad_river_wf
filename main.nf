@@ -40,7 +40,6 @@ if (params.maxcpus < 8) {
 include {
     BBMAP_ALIGN;
     BBMERGE;
-    INTERLEAVE;
     PILEUP;
     REMOVE_JUNK_DELS;
     REMOVE_SINGLETONS;
@@ -162,8 +161,7 @@ workflow {
 
     // PRE-ALIGNMENT
     // =============
-    INTERLEAVE(paired_reads) // out: interleaved_specimens, _
-    BBMERGE(INTERLEAVE.out.interleaved_specimens) // out: bbmerged_specimens, _
+    BBMERGE(paired_reads) // out: bbmerged_specimens, _
     ch_take_viral = BBMERGE.out.bbmerged_specimens | concat(single_reads)
     TAKE_VIRAL(ch_take_viral, GRAB_NEXTCLADE_DATA.out.reference_genome) // out: viral_specimens, _
     ch_trim_adapters = TAKE_VIRAL.out.viral_specimens | combine(adapter_fasta)

@@ -62,7 +62,7 @@ process BBMERGE {
     memory 1.GB
 
     input:
-        tuple val(sample), file(specimen)
+        tuple val(sample), file(reads)
 
     output:
         tuple val(sample), path("${task.process}/${sample}_merged.fq.gz"), emit: bbmerged_specimens
@@ -80,44 +80,12 @@ process BBMERGE {
         echo "BBTools bbmerge.sh: $(bbmerge.sh -h | grep 'Last modified')" >> $log_file
 
         bbmerge.sh \
-            in=!{specimen} \
+            in1=!{reads[0]} \
+            in2=!{reads[1]} \
             out=!{task.process}/!{sample}_merged.fq.gz \
             adapter=default \
             strict \
             ihist=!{task.process}/!{sample}_merge_ihist.txt \
-            2>> $err_file >> $log_file
-    '''
-}
-
-process INTERLEAVE {
-    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
-    tag "${sample}"
-    echo false
-    cpus params.medcpus
-    container params.container_bbtools
-    memory 300.MB
-
-    input:
-        tuple val(sample), file(reads)
-
-    output:
-        tuple val(sample), path("${task.process}/${sample}_interleaved.fq.gz"), optional: true, emit: interleaved_specimens
-        path("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
-
-    shell:
-    '''
-        mkdir -p !{task.process} logs/!{task.process}
-        log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-        err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-
-        # time stamp + capturing tool versions
-        date | tee -a $log_file $err_file > /dev/null
-        echo "BBTools reformat.sh: $(reformat.sh -h | grep 'Last modified')" >> $log_file
-
-        reformat.sh \
-            in1=!{reads[0]} \
-            in2=!{reads[1]} \
-            out=!{task.process}/!{sample}_interleaved.fq.gz \
             2>> $err_file >> $log_file
     '''
 }
