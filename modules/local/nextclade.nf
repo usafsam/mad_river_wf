@@ -56,14 +56,11 @@ process NEXTCLADE {
         nextclade run \
             --in-order \
             --jobs !{task.cpus} \
-            -i !{fasta} \
             --input-dataset !{ref_nextclade} \
-            --output-dir !{task.process}/ \
+            --output-all !{task.process}/ \
             --output-basename nextclade \
-            --output-csv !{task.process}/nextclade.csv \
-            --output-json !{task.process}/nextclade.json \
-            --output-tree !{task.process}/nextclade.auspice.json \
             !{params.nextclade_options} \
+            !{fasta} \
             2>> $err_file >> $log_file
     '''
 }
