@@ -3,6 +3,7 @@
 nextflow.enable.dsl=2
 
 params.skip_performance_excel = false
+params.run_as_single_reads = false
 
 params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/results'
@@ -101,18 +102,32 @@ workflow {
         .view { "Adapter FASTA.gz: $it" }
         .set { adapter_fasta }
 
-    Channel
-        .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq.gz", "${params.reads}/*_{1,2}.fastq*"], size: 2)
-        .map { reads ->
-            tuple(reads[0].replaceAll(~/_S[0-9]+(_L[0-9]+)?/,""), reads[1])
-        }
-        .filter { reads ->
-            reads[1][0].exists() && reads[1][1].exists()
-        }
-        .ifEmpty {
-            exit 1, "No fastq or fastq.gz files were found at ${params.reads}!\nDid you forget to set 'params.reads'?"
-        }
-        .set { paired_reads }
+    if (!params.run_as_single_reads) {
+        Channel
+            .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq.gz", "${params.reads}/*_{1,2}.fastq*"], size: 2)
+            .map { reads ->
+                tuple(reads[0].replaceAll(~/_S[0-9]+(_L[0-9]+)?/,""), reads[1])
+            }
+            .filter { reads ->
+                reads[1][0].exists() && reads[1][1].exists()
+            }
+            .ifEmpty {
+                exit 1, "No fastq or fastq.gz files were found at ${params.reads}!\nDid you forget to set 'params.reads'?"
+            }
+            .set { paired_reads }
+        Channel.empty().set { single_reads }
+    }
+    else {
+        Channel.empty().set { paired_reads }
+        Channel
+            .fromPath("${params.reads}/*.fastq.gz")
+            .map { reads -> tuple(reads.simpleName, reads) }
+            .filter { reads -> reads[1].exists() }
+            .ifEmpty {
+                exit 1, "No fastq or fastq.gz files were found at ${params.reads}!\nDid you forget to set 'params.reads'?"
+            }
+            .set { single_reads }
+    }
 
     if (!params.skip_performance_excel) {
         Channel
@@ -149,7 +164,8 @@ workflow {
     // =============
     INTERLEAVE(paired_reads) // out: interleaved_specimens, _
     BBMERGE(INTERLEAVE.out.interleaved_specimens) // out: bbmerged_specimens, _
-    TAKE_VIRAL(BBMERGE.out.bbmerged_specimens, GRAB_NEXTCLADE_DATA.out.reference_genome) // out: viral_specimens, _
+    ch_take_viral = BBMERGE.out.bbmerged_specimens | concat(single_reads)
+    TAKE_VIRAL(ch_take_viral, GRAB_NEXTCLADE_DATA.out.reference_genome) // out: viral_specimens, _
     ch_trim_adapters = TAKE_VIRAL.out.viral_specimens | combine(adapter_fasta)
     TRIM_ADAPTERS(ch_trim_adapters) // out: adapter_trimmed_specimens, _
     ch_trim_primers = TRIM_ADAPTERS.out.adapter_trimmed_specimens | combine(DATA_PREP.out.primer_fasta)
