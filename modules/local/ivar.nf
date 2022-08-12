@@ -2,7 +2,6 @@ process IVAR_CONSENSUS {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*.consensus.fa"
     tag "${sample}"
-    echo false
     container params.container_ivar
     memory {2.GB * task.attempt}
     errorStrategy {'retry'}
@@ -40,14 +39,15 @@ process IVAR_VARIANTS {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*.variants.tsv"
     tag "${sample}"
-    echo false
     container params.container_ivar
     memory {2.GB * task.attempt}
     errorStrategy {'retry'}
     maxRetries 2
 
     input:
-        tuple val(sample), file(bamfile), file(ref_genome), file(ref_gff)
+        tuple val(sample), file(bamfile)
+        file(ref_genome)
+        file(ref_gff)
 
     output:
         path("${task.process}/${sample}.variants.tsv"), emit: ivar_tsvs

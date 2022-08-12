@@ -1,7 +1,6 @@
 process BBMAP_ALIGN {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.maxcpus
     container params.container_bbtools
     memory {4.GB * task.attempt}
@@ -56,7 +55,6 @@ process BBMERGE {
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_merge_ihist.txt"
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 1.GB
@@ -96,7 +94,6 @@ process PILEUP {
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_covstats.txt"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_hist.txt"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 2.GB
@@ -147,7 +144,6 @@ process PILEUP {
 process REMOVE_JUNK_DELS {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 8.GB
@@ -206,7 +202,6 @@ process REMOVE_JUNK_DELS {
 process REMOVE_SINGLETONS {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 8.GB
@@ -263,7 +258,6 @@ process REMOVE_SINGLETONS {
 process SOFT_TRIM {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 2.GB
@@ -309,7 +303,6 @@ process SOFT_TRIM {
 process SUMMARIZE_COVERAGE {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "coverageSummary.txt"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
 
@@ -337,7 +330,6 @@ process SUMMARIZE_COVERAGE {
 process TAKE_VIRAL {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 2.GB
@@ -386,13 +378,13 @@ process TAKE_VIRAL {
 process TRIM_ADAPTERS {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 2.GB
 
     input:
-        tuple val(sample), file(specimen), file(adapters)
+        tuple val(sample), file(specimen)
+        file(adapters)
 
     output:
         tuple val(sample), path("${task.process}/${sample}_trimmed.fq.gz"), emit: adapter_trimmed_specimens
@@ -446,13 +438,13 @@ process TRIM_ADAPTERS {
 process TRIM_PRIMERS {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_bbtools
     memory 2.GB
 
     input:
-        tuple val(sample), file(specimen), file(primers)
+        tuple val(sample), file(specimen)
+        file(primers)
 
     output:
         tuple val(sample), path("${task.process}/${sample}_trimmed2.fq.gz"), emit: primer_trimmed_specimens
@@ -479,12 +471,16 @@ process TRIM_PRIMERS {
         date | tee -a $log_file $err_file > /dev/null
         echo "BBTools bbduk.sh: $(bbduk.sh -h | grep 'Last modified')" >> $log_file
 
+        # establish kmer length
+        kmer_len=$(grep -v '>' !{primers} | awk '{print length}' | sort -n -u | head -n 1)
+
         bbduk.sh \
             in=!{specimen} \
             out=!{task.process}/!{sample}_trimmed2.fq.gz \
             ref=!{primers} \
             ktrim=l \
             restrictleft=30 \
+            k=$kmer_len \
             hdist=3 \
             qhdist=1 \
             rcomp=f \

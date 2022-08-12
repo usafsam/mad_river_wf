@@ -1,6 +1,5 @@
 process DATA_PREP {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
-    echo false
     container params.container_python
 
     input:
@@ -38,7 +37,6 @@ process DATA_PREP {
 process LINEAGE_EXCEL {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "*_lineage.xlsx"
-    echo false
     conda "${workflow.projectDir}/env/performance_lineage_excel.yml"
 
     input:
@@ -72,7 +70,6 @@ process LINEAGE_EXCEL {
 process PERFORMANCE_EXCEL {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "*_performance.xlsx"
-    echo false
     conda "${workflow.projectDir}/env/performance_lineage_excel.yml"
 
     input:
@@ -109,7 +106,6 @@ params.spike_gene_coverage_file_out = "xlsx"
 process SPIKE_GENE_COVERAGE {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "*_21563-25384.${params.spike_gene_coverage_file_out}"
-    echo false
     conda "${workflow.projectDir}/env/nextalign_gene_coverage.yml"
 
     input:
@@ -142,7 +138,6 @@ params.traffic_light_plot_file_out = "pdf"
 process TRAFFIC_LIGHT_PLOT {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "*.summary.${params.traffic_light_plot_file_out}"
-    echo false
     conda "${workflow.projectDir}/env/traffic_light_plot.yml"
 
     input:

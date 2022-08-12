@@ -1,11 +1,10 @@
 process GRAB_NEXTCLADE_DATA {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}.{log,err}"
-    echo false
     container params.container_nextclade
 
     output:
-        path("data/sars-cov-2_MN908947/reference.fasta"), emit: reference_genome
-        path("data/sars-cov-2_MN908947/"), emit: reference_nextclade
+        path("data/${params.nextclade_reference_name}/reference.fasta"), emit: reference_genome
+        path("data/${params.nextclade_reference_name}/"), emit: reference_nextclade
 
     shell:
     '''
@@ -18,17 +17,14 @@ process GRAB_NEXTCLADE_DATA {
         nextclade --version >> $log_file
 
         nextclade dataset get \
-            --name='sars-cov-2' \
-            --reference='MN908947' \
-            --output-dir='data/sars-cov-2_MN908947'
+            --name='!{params.nextclade_reference_name}' \
+            --output-dir='data/!{params.nextclade_reference_name}'
     '''
 }
 
-params.nextclade_options = ''
 process NEXTCLADE {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/nextclade.*"
-    echo false
     cpus params.medcpus
     container params.container_nextclade
 
