@@ -3,7 +3,6 @@ process SAMTOOLS_SORT_INDEX {
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_trimclip.sorted.bam"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*_trimclip.sorted.bam.bai"
     tag "${sample}"
-    echo false
     cpus params.medcpus
     container params.container_samtools
 

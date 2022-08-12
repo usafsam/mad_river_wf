@@ -1,11 +1,6 @@
-params.vadr_options = '--split --glsearch -s -r --nomisc --lowsim5seq 6 --lowsim3seq 6 --alt_fail lowscore,insertnn,deletinn'
-params.vadr_reference = 'sarscov2'
-params.vadr_mdir = '/opt/vadr/vadr-models'
-params.vadr_trim_options = '--minlen 50 --maxlen 30000'
 process VADR {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/*"
-    echo false
     cpus params.medcpus
     container params.container_vadr
 
@@ -14,7 +9,7 @@ process VADR {
     
     output:
         path("${task.process}/*"), optional: true, emit: vadr
-        path("${task.process}/${task.process}.vadr.sqa"), optional: true, emit: vadr_file
+        path("${task.process}/${file(params.outdir).getSimpleName()}/${file(params.outdir).getSimpleName()}.vadr.sqa"), optional: true, emit: vadr_file
         path("logs/${task.process}/${workflow.sessionId}.{log,err}")
     
     shell:
@@ -27,10 +22,14 @@ process VADR {
         date | tee -a $log_file $err_file > /dev/null
         v-annotate.pl -h | head -n 2 | tail -n 1 >> $log_file
 
+        mkdir '!{task.process}'
+
         fasta-trim-terminal-ambigs.pl \
             !{params.vadr_trim_options} \
-            !{fasta} > trimmed_!{fasta} 2>> $err_file
-        
+            !{fasta} > '!{task.process}'/trimmed_!{fasta} 2>> $err_file
+
+        cd '!{task.process}'
+
         if [[ -s trimmed_!{fasta} ]]
         then
             v-annotate.pl !{params.vadr_options} \
@@ -38,8 +37,8 @@ process VADR {
                 --mkey !{params.vadr_reference} \
                 --mdir !{params.vadr_mdir} \
                 trimmed_!{fasta} \
-                !{task.process} \
-                2>> $err_file >> $log_file
+                "$(basename '!{params.outdir}')" \
+                2>> ../$err_file >> ../$log_file
         fi
     '''
 }

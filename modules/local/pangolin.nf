@@ -1,8 +1,6 @@
-params.pangolin_options = '--max-ambig 0.5 --min-length 10000'
 process PANGOLIN {
     publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
     publishDir "${params.outdir}", mode: 'copy', pattern: "${task.process}/lineage_report.csv"
-    echo false
     cpus params.medcpus
     container params.container_pangolin
 
