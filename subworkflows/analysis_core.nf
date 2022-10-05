@@ -1,6 +1,7 @@
 include {
     BBMAP_ALIGN;
     BBMERGE;
+    INTERLEAVE;
     PILEUP;
     REMOVE_JUNK_DELS;
     REMOVE_SINGLETONS;
@@ -46,13 +47,14 @@ workflow analysis_core {
     main:
         // PRE-ALIGNMENT
         // =============
-        BBMERGE(paired_reads)
-        ch_take_viral = BBMERGE.out.bbmerged_specimens | concat(single_reads)
+        INTERLEAVE(paired_reads)
+        ch_take_viral = INTERLEAVE.out.interleaved_specimens | concat(single_reads)
         TAKE_VIRAL(ch_take_viral, reference)
         TRIM_ADAPTERS(TAKE_VIRAL.out.viral_specimens, adapter_fasta)
         TRIM_PRIMERS(TRIM_ADAPTERS.out.adapter_trimmed_specimens, primer_fasta)
+        BBMERGE(TRIM_PRIMERS.out.primer_trimmed_specimens)
 
-        BBMAP_ALIGN(TRIM_PRIMERS.out.primer_trimmed_specimens, reference)
+        BBMAP_ALIGN(BBMERGE.out.bbmerged_specimens, reference)
 
         // POST-ALIGNMENT
         // ==============

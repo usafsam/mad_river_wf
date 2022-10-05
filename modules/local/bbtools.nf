@@ -47,6 +47,7 @@ process BBMAP_ALIGN {
             threads=!{task.cpus} \
             ow \
             k=12 \
+            trd \
             2>> $err_file >> $log_file
     '''
 }
@@ -57,14 +58,61 @@ process BBMERGE {
     tag "${sample}"
     cpus params.medcpus
     container params.container_bbtools
-    memory 1.GB
+    memory 4.GB
+
+    input:
+        tuple val(sample), file(specimen)
+
+    output:
+        tuple val(sample), path("${task.process}/${sample}_merged.fq.gz"), emit: bbmerged_specimens
+        path("${task.process}/${sample}_merge_ihist.txt")
+        path("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+
+    shell:
+    '''
+        case $(echo "!{task.memory}" | cut -d' ' -f2) in
+            [gG]B*) UNIT=1073741824;;
+            [mM]B*) UNIT=1048576;;
+            [kK]B*) UNIT=1024;;
+            B*) UNIT=1;;
+        esac
+        MEMORY=$(( $(echo "!{task.memory}" | cut -d '.' -f1 | cut -d ' ' -f1) * $UNIT ))
+        if [[ -z $MEMORY ]]; then
+            XMX_FLAG="-Xmx$MEMORY"
+        fi
+
+        mkdir -p !{task.process} logs/!{task.process}
+        log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+        err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+
+        # time stamp + capturing tool versions
+        date | tee -a $log_file $err_file > /dev/null
+        echo "BBTools bbmerge.sh: $(bbmerge.sh -h | grep 'Last modified')" >> $log_file
+
+        bbmerge.sh \
+            -Xms$MEMORY \
+            threads=!{task.cpus} \
+            in=!{specimen} \
+            out=!{task.process}/!{sample}_merged.fq.gz \
+            adapter=default \
+            strict rem \
+            ihist=!{task.process}/!{sample}_merge_ihist.txt \
+            2>> $err_file >> $log_file
+    '''
+}
+
+process INTERLEAVE {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
+    tag "${sample}"
+    cpus params.halfmedcpus
+    container params.container_bbtools
+    memory 500.MB
 
     input:
         tuple val(sample), file(reads)
 
     output:
-        tuple val(sample), path("${task.process}/${sample}_merged.fq.gz"), emit: bbmerged_specimens
-        path("${task.process}/${sample}_merge_ihist.txt")
+        tuple val(sample), path("${task.process}/${sample}_interleaved.fq.gz"), optional: true, emit: interleaved_specimens
         path("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
     shell:
@@ -75,15 +123,12 @@ process BBMERGE {
 
         # time stamp + capturing tool versions
         date | tee -a $log_file $err_file > /dev/null
-        echo "BBTools bbmerge.sh: $(bbmerge.sh -h | grep 'Last modified')" >> $log_file
+        echo "BBTools reformat.sh: $(reformat.sh -h | grep 'Last modified')" >> $log_file
 
-        bbmerge.sh \
+        reformat.sh \
             in1=!{reads[0]} \
             in2=!{reads[1]} \
-            out=!{task.process}/!{sample}_merged.fq.gz \
-            adapter=default \
-            strict \
-            ihist=!{task.process}/!{sample}_merge_ihist.txt \
+            out=!{task.process}/!{sample}_interleaved.fq.gz \
             2>> $err_file >> $log_file
     '''
 }
@@ -291,6 +336,7 @@ process SOFT_TRIM {
         echo "BBTools bbduk.sh: $(bbduk.sh -h | grep 'Last modified')" >> $log_file
 
         bbduk.sh \
+            trimclip \
             in=!{samfile} \
             out=!{task.process}/!{sample}_trimclip.sam.gz \
             -Xms$MEMORY \
@@ -473,13 +519,14 @@ process TRIM_PRIMERS {
 
         # establish kmer length
         kmer_len=$(grep -v '>' !{primers} | awk '{print length}' | sort -n -u | head -n 1)
+        max_primer_len=$(grep -v '>' !{primers} | awk '{print length}' | sort -n -u | tail -n 1)
 
         bbduk.sh \
             in=!{specimen} \
             out=!{task.process}/!{sample}_trimmed2.fq.gz \
             ref=!{primers} \
             ktrim=l \
-            restrictleft=30 \
+            restrictleft=$max_primer_len \
             k=$kmer_len \
             hdist=3 \
             qhdist=1 \
